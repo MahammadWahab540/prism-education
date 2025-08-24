@@ -65,7 +65,7 @@ const variants = {
 
 const transitionProps = {
   type: 'tween' as const,
-  ease: 'easeOut',
+  ease: [0.4, 0, 0.2, 1] as const,
   duration: 0.2,
   staggerChildren: 0.1,
 };
@@ -360,3 +360,58 @@ export function RoleSidebar() {
     </motion.div>
   );
 }
+
+// Navigation items for each role
+const getNavigationItems = (role: string) => {
+  switch (role) {
+    case 'platform_owner':
+      return [
+        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+        { title: 'Tenants', url: '/tenants', icon: Building2 },
+        { title: 'Analytics', url: '/analytics', icon: BarChart3 },
+        { title: 'System Users', url: '/system-users', icon: Users },
+        { title: 'Reports', url: '/system-reports', icon: FileText },
+        { title: 'Billing', url: '/billing', icon: TrendingUp },
+      ];
+    case 'tenant_admin':
+      return [
+        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+        { title: 'Courses', url: '/courses', icon: BookOpen },
+        { title: 'Students', url: '/students', icon: GraduationCap },
+        { title: 'Instructors', url: '/instructors', icon: UserCog },
+        { title: 'Analytics', url: '/tenant-analytics', icon: PieChart },
+        { title: 'Reports', url: '/tenant-reports', icon: FileText },
+        { title: 'Calendar', url: '/calendar', icon: Calendar },
+      ];
+    case 'student':
+      return [
+        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+        { title: 'My Courses', url: '/my-courses', icon: BookOpen },
+        { title: 'Assignments', url: '/assignments', icon: ClipboardList },
+        { title: 'Grades', url: '/grades', icon: Award },
+        { title: 'Calendar', url: '/student-calendar', icon: Calendar },
+        { title: 'Messages', url: '/messages', icon: MessageSquare },
+        { title: 'Library', url: '/library', icon: School },
+      ];
+    default:
+      return [];
+  }
+};
+
+const getRoleDisplayName = (role: string) => {
+  switch (role) {
+    case 'platform_owner': return 'Platform Owner';
+    case 'tenant_admin': return 'Tenant Admin';
+    case 'student': return 'Student';
+    default: return role;
+  }
+};
+
+const getOrganizationName = (role: string, user: any) => {
+  switch (role) {
+    case 'platform_owner': return 'EduPlatform';
+    case 'tenant_admin': return 'My Institution';
+    case 'student': return 'My School';
+    default: return 'Organization';
+  }
+};
