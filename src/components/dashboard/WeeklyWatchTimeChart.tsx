@@ -18,16 +18,7 @@ export function WeeklyWatchTimeChart({ data }: WeeklyWatchTimeChartProps) {
 
   const barVariants = {
     initial: { scaleY: 0, opacity: 0 },
-    animate: (i: number) => ({
-      scaleY: 1,
-      opacity: 1,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.5,
-        type: "spring",
-        stiffness: 100
-      }
-    }),
+    animate: { scaleY: 1, opacity: 1 },
     hover: {
       scale: 1.05,
       transition: { duration: 0.2 }
@@ -59,11 +50,16 @@ export function WeeklyWatchTimeChart({ data }: WeeklyWatchTimeChartProps) {
                 {/* Bar */}
                 <div className="w-full flex items-end h-24 mb-2">
                   <motion.div
-                    custom={index}
                     variants={barVariants}
                     initial="initial"
                     animate="animate"
                     whileHover="hover"
+                    transition={{
+                      delay: index * 0.1,
+                      duration: 0.5,
+                      type: "spring" as const,
+                      stiffness: 100
+                    }}
                     className={`
                       w-full rounded-t-md origin-bottom cursor-pointer relative group
                       ${item.isToday 
