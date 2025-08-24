@@ -37,7 +37,6 @@ import {
   ClipboardList,
   PieChart,
   UserCircle,
-  ChevronRight,
 } from 'lucide-react';
 
 const sidebarVariants = {
