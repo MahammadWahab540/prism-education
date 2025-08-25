@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AnimatedKpiCard } from '@/components/ui/animated-kpi-card';
 import { 
   BookOpen, 
   Users, 
@@ -17,10 +17,34 @@ import {
 
 export function TenantAdminDashboard() {
   const stats = [
-    { label: 'Active Courses', value: '12', icon: BookOpen, change: '+2 this month' },
-    { label: 'Enrolled Students', value: '486', icon: Users, change: '+24 this week' },
-    { label: 'Completed Courses', value: '89', icon: Trophy, change: '+15 this month' },
-    { label: 'Avg. Completion Rate', value: '78%', icon: TrendingUp, change: '+5% vs last month' }
+    { 
+      label: 'Active Courses', 
+      value: '12', 
+      icon: BookOpen, 
+      change: '+2 this month',
+      animationType: 'progress' as const
+    },
+    { 
+      label: 'Enrolled Students', 
+      value: '486', 
+      icon: Users, 
+      change: '+24 this week',
+      animationType: 'wave' as const
+    },
+    { 
+      label: 'Completed Courses', 
+      value: '89', 
+      icon: Trophy, 
+      change: '+15 this month',
+      animationType: 'geometric' as const
+    },
+    { 
+      label: 'Avg. Completion Rate', 
+      value: '78%', 
+      icon: TrendingUp, 
+      change: '+5% vs last month',
+      animationType: 'pulse' as const
+    }
   ];
 
   const courses = [
@@ -81,21 +105,17 @@ export function TenantAdminDashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Animated Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <Card key={stat.label} className="glass-card p-6 hover:shadow-elevated transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-                <p className="text-2xl font-bold mt-2">{stat.value}</p>
-                <p className="text-xs text-accent-success mt-2">{stat.change}</p>
-              </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent-luxury/20 rounded-xl flex items-center justify-center">
-                <stat.icon className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </Card>
+          <AnimatedKpiCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            change={stat.change}
+            icon={stat.icon}
+            animationType={stat.animationType}
+          />
         ))}
       </div>
 

@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AnimatedKpiCard } from '@/components/ui/animated-kpi-card';
 import { 
   Users, 
   Building2, 
@@ -17,10 +17,38 @@ import {
 
 export function PlatformOwnerDashboard() {
   const stats = [
-    { label: 'Total Tenants', value: '24', icon: Building2, change: '+12%', trend: 'up' },
-    { label: 'Active Students', value: '3,247', icon: Users, change: '+18%', trend: 'up' },
-    { label: 'Monthly Revenue', value: '$84,320', icon: DollarSign, change: '+24%', trend: 'up' },
-    { label: 'Course Completions', value: '1,892', icon: TrendingUp, change: '+8%', trend: 'up' }
+    { 
+      label: 'Total Tenants', 
+      value: '24', 
+      icon: Building2, 
+      change: '+12%', 
+      trend: 'up' as const,
+      animationType: 'progress' as const
+    },
+    { 
+      label: 'Active Students', 
+      value: '3,247', 
+      icon: Users, 
+      change: '+18%', 
+      trend: 'up' as const,
+      animationType: 'wave' as const
+    },
+    { 
+      label: 'Monthly Revenue', 
+      value: '$84,320', 
+      icon: DollarSign, 
+      change: '+24%', 
+      trend: 'up' as const,
+      animationType: 'geometric' as const
+    },
+    { 
+      label: 'Course Completions', 
+      value: '1,892', 
+      icon: TrendingUp, 
+      change: '+8%', 
+      trend: 'up' as const,
+      animationType: 'pulse' as const
+    }
   ];
 
   const tenants = [
@@ -50,24 +78,18 @@ export function PlatformOwnerDashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Animated Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <Card key={stat.label} className="glass-card p-6 hover:shadow-elevated transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-                <p className="text-2xl font-bold mt-2">{stat.value}</p>
-                <div className="flex items-center mt-2">
-                  <TrendingUp className="w-4 h-4 text-accent-success mr-1" />
-                  <span className="text-sm text-accent-success">{stat.change}</span>
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent-luxury/20 rounded-xl flex items-center justify-center">
-                <stat.icon className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </Card>
+          <AnimatedKpiCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            change={stat.change}
+            trend={stat.trend}
+            icon={stat.icon}
+            animationType={stat.animationType}
+          />
         ))}
       </div>
 

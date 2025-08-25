@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { GradientText } from '@/components/ui/gradient-text';
+import { AnimatedKpiCard } from '@/components/ui/animated-kpi-card';
 import { 
   BookOpen, 
   Play, 
@@ -20,10 +20,30 @@ import { RightProfilePanel } from './RightProfilePanel';
 
 export function StudentDashboard() {
   const stats = [
-    { label: 'Courses in Progress', value: '4', icon: BookOpen },
-    { label: 'Hours Learned', value: '47', icon: Clock },
-    { label: 'Certificates Earned', value: '3', icon: Trophy },
-    { label: 'Current Streak', value: '12 days', icon: Target }
+    { 
+      label: 'Courses in Progress', 
+      value: '4', 
+      icon: BookOpen,
+      animationType: 'progress' as const
+    },
+    { 
+      label: 'Hours Learned', 
+      value: '47', 
+      icon: Clock,
+      animationType: 'wave' as const
+    },
+    { 
+      label: 'Certificates Earned', 
+      value: '3', 
+      icon: Trophy,
+      animationType: 'geometric' as const
+    },
+    { 
+      label: 'Current Streak', 
+      value: '12 days', 
+      icon: Target,
+      animationType: 'pulse' as const
+    }
   ];
 
   const courses = [
@@ -83,20 +103,16 @@ export function StudentDashboard() {
           </Button>
         </div>
 
-        {/* Stats Grid */}
+        {/* Animated Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.label} className="glass-card p-6 hover:shadow-elevated transition-all duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold mt-2">{stat.value}</p>
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent-luxury/20 rounded-xl flex items-center justify-center">
-                  <stat.icon className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-            </Card>
+            <AnimatedKpiCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              icon={stat.icon}
+              animationType={stat.animationType}
+            />
           ))}
         </div>
 
