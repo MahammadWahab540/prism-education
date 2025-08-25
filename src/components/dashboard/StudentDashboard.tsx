@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { GradientText } from '@/components/ui/gradient-text';
 import { 
   BookOpen, 
   Play, 
@@ -70,7 +72,9 @@ export function StudentDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gradient-luxury">Welcome back, John! 👋</h1>
+            <h1 className="text-3xl font-bold">
+              <GradientText>Welcome back</GradientText>, John! 👋
+            </h1>
             <p className="text-muted-foreground mt-2">Continue your learning journey</p>
           </div>
           <Button className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium">
