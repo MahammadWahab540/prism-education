@@ -1,24 +1,9 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  Flame, 
-  Trophy, 
-  Target, 
-  Crown, 
-  BookOpen, 
-  CheckCircle,
-  Calendar,
-  Clock,
-  Star,
-  TrendingUp
-} from 'lucide-react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { ProfileCard } from './ProfileCard';
-import { WeeklyStreakCalendar } from './WeeklyStreakCalendar';
+import { WeeklyStreak } from './WeeklyStreak';
 import { CoursesProgressSnapshot } from './CoursesProgressSnapshot';
 import { WeeklyWatchTimeChart } from './WeeklyWatchTimeChart';
 
@@ -36,9 +21,19 @@ const mockProfileData = {
     leaderboardRank: 3
   },
   streaks: {
-    currentWeek: [true, true, true, false, false, false, false], // Mon-Sun
-    weeksCompleted: 4,
-    totalWeeks: 4
+    currentStreak: 5,
+    longestStreak: 54,
+    weeklyGoal: 7,
+    completedDays: 5,
+    streakData: [
+      { day: 'Mon', completed: true, date: '2024-01-15' },
+      { day: 'Tue', completed: true, date: '2024-01-16' },
+      { day: 'Wed', completed: true, date: '2024-01-17' },
+      { day: 'Thu', completed: true, date: '2024-01-18' },
+      { day: 'Fri', completed: true, date: '2024-01-19' },
+      { day: 'Sat', completed: false, date: '2024-01-20' },
+      { day: 'Sun', completed: false, date: '2024-01-21' }
+    ]
   },
   courses: {
     inProgress: 3,
@@ -88,11 +83,14 @@ export function RightProfilePanel() {
           <ProfileCard data={mockProfileData} />
         </motion.div>
 
-        {/* Weekly Streak Calendar */}
+        {/* Weekly Streak */}
         <motion.div variants={itemVariants}>
-          <WeeklyStreakCalendar 
-            data={mockProfileData.streaks}
-            onCalendarClick={() => setShowStreakHistory(true)}
+          <WeeklyStreak 
+            currentStreak={mockProfileData.streaks.currentStreak}
+            longestStreak={mockProfileData.streaks.longestStreak}
+            weeklyGoal={mockProfileData.streaks.weeklyGoal}
+            completedDays={mockProfileData.streaks.completedDays}
+            streakData={mockProfileData.streaks.streakData}
           />
         </motion.div>
 
