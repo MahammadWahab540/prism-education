@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/auth/LoginForm";
 import Dashboard from "./pages/Dashboard";
 import MySkills from "./pages/MySkills";
+import Roadmap from "./pages/Roadmap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +37,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/my-skills" element={<MySkills />} />
+        <Route path="/roadmap/:skillId" element={<Roadmap />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
