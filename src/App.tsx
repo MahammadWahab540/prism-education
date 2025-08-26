@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/auth/LoginForm";
 import Dashboard from "./pages/Dashboard";
+import MySkills from "./pages/MySkills";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ function AppContent() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/my-skills" element={<MySkills />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
@@ -49,7 +51,7 @@ const App = () => (
       <AuthProvider>
         <AppContent />
       </AuthProvider>
-    </TooltipProvider>
+    </ToTooltipProvider>
   </QueryClientProvider>
 );
 

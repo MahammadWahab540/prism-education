@@ -62,6 +62,22 @@
     --color-4: 60 100% 70%; /* Light Neon Yellow */
     --color-5: 295 100% 45%; /* Dark Neon Purple */
     --brand: 50 100% 50%; /* Bright, punchy yellow */
+
+    /* InfoCard specific variables */
+    --border-color-1: 20 85% 55%; /* Orange */
+    --border-color-2: 270 60% 65%; /* Purple */
+    --border-color-3: 210 100% 50%; /* Blue */
+    --border-bg-color: 220 20% 96%;
+    --card-bg-color: 0 0% 100%;
+    --shadow-color: 220 20% 88%;
+    --text-color: 220 15% 15%;
+    --hover-text-color-1: 0 0% 0%;
+    --hover-text-color-2: 0 0% 100%;
+    --hover-text-color-3: 0 0% 100%;
+    --font-family: 'Inter', sans-serif;
+    --rtl-font-family: 'Inter', sans-serif;
+    --pattern-color1: rgba(200,200,200,0.10);
+    --pattern-color2: rgba(220,220,220,0.10);
   }
 
   .dark {
@@ -71,6 +87,22 @@
     --color-4: 60 100% 70%; /* Light Neon Yellow */
     --color-5: 295 100% 45%; /* Dark Neon Purple */
     --brand: 50 100% 50%; /* Bright, punchy yellow */
+
+    /* InfoCard dark mode variables */
+    --border-color-1: 75 100% 70%; /* Lime */
+    --border-color-2: 270 60% 65%; /* Purple */
+    --border-color-3: 210 100% 50%; /* Blue */
+    --border-bg-color: 220 15% 15%;
+    --card-bg-color: 0 0% 0%;
+    --shadow-color: 220 15% 15%;
+    --text-color: 0 0% 96%;
+    --hover-text-color-1: 220 15% 15%;
+    --hover-text-color-2: 0 0% 0%;
+    --hover-text-color-3: 220 15% 15%;
+    --font-family: 'Inter', sans-serif;
+    --rtl-font-family: 'Inter', sans-serif;
+    --pattern-color1: rgba(230,230,230,0.15);
+    --pattern-color2: rgba(240,240,240,0.15);
   }
 }
 
