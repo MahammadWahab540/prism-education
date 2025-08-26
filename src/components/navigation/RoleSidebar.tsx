@@ -100,7 +100,7 @@ const getNavigationItems = (role: string) => {
     case 'student':
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'My Courses', url: '/my-courses', icon: BookOpen },
+        { title: 'My Skills', url: '/my-skills', icon: BookOpen },
         { title: 'Assignments', url: '/assignments', icon: ClipboardList },
         { title: 'Grades', url: '/grades', icon: Award },
         { title: 'Calendar', url: '/student-calendar', icon: Calendar },
