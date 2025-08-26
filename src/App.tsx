@@ -51,7 +51,7 @@ const App = () => (
       <AuthProvider>
         <AppContent />
       </AuthProvider>
-    </ToTooltipProvider>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
