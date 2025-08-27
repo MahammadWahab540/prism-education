@@ -8,6 +8,7 @@ import Dashboard from "@/pages/Dashboard";
 import MySkills from "@/pages/MySkills";
 import Roadmap from "@/pages/Roadmap";
 import LearningPage from "@/pages/LearningPage";
+import CourseManagement from "@/pages/CourseManagement";
 import NotFound from "@/pages/NotFound";
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
               <Route path="/my-skills" element={<MySkills />} />
               <Route path="/roadmap/:skillId" element={<Roadmap />} />
               <Route path="/learn/:skillId/:stageId" element={<LearningPage />} />
+              <Route path="/course-management" element={<CourseManagement />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
