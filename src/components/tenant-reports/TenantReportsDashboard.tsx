@@ -75,33 +75,105 @@ const chartConfig = {
 
 export function TenantReportsDashboard() {
   const [timeRange, setTimeRange] = useState('12m');
-  const [reportType, setReportType] = useState('executive');
+  const [reportType, setReportType] = useState('student-overview');
+  const [selectedStudent, setSelectedStudent] = useState('all');
 
-  // Mock data for tenant reports
-  const executiveSummaryData = {
-    totalRevenue: '$1.2M',
-    revenueGrowth: 24.5,
-    totalTenants: 127,
-    tenantGrowth: 18.2,
+  // Comprehensive Student Portal Events Tracking
+  const studentPortalEvents = {
+    // Learning & Content Events
+    learningEvents: [
+      'course_enrollment', 'course_start', 'course_completion', 'course_drop',
+      'lesson_start', 'lesson_completion', 'lesson_pause', 'lesson_resume',
+      'chapter_start', 'chapter_completion', 'module_unlock',
+      'video_play', 'video_pause', 'video_seek', 'video_speed_change', 'video_completion',
+      'document_open', 'document_download', 'resource_access',
+      'quiz_start', 'quiz_submission', 'quiz_completion', 'quiz_retake',
+      'assignment_start', 'assignment_submission', 'assignment_completion',
+      'project_creation', 'project_submission', 'project_completion',
+      'skill_assessment_start', 'skill_assessment_completion',
+      'certification_earned', 'certificate_download', 'badge_earned',
+      'milestone_reached', 'progress_checkpoint', 'streak_achievement'
+    ],
+    
+    // Engagement & Interaction Events  
+    engagementEvents: [
+      'login', 'logout', 'session_start', 'session_end', 'session_timeout',
+      'page_view', 'time_on_page', 'scroll_depth', 'click_tracking',
+      'search_query', 'search_result_click', 'filter_usage',
+      'navigation_click', 'menu_usage', 'bookmark_add', 'bookmark_remove',
+      'note_creation', 'note_edit', 'note_delete', 'highlight_text',
+      'content_rating', 'content_review', 'feedback_submission',
+      'feature_usage', 'tool_interaction', 'shortcut_usage'
+    ],
+
+    // Social & Community Events
+    socialEvents: [
+      'forum_post_create', 'forum_post_reply', 'forum_post_like', 'forum_post_share',
+      'discussion_join', 'discussion_create', 'discussion_moderate',
+      'peer_connection', 'mentor_request', 'mentorship_session',
+      'group_join', 'group_create', 'group_activity', 'group_leave',
+      'peer_review_give', 'peer_review_receive', 'collaboration_invite',
+      'message_send', 'message_receive', 'announcement_read',
+      'event_registration', 'webinar_attendance', 'workshop_participation'
+    ],
+
+    // Assessment & Performance Events
+    assessmentEvents: [
+      'test_start', 'test_submission', 'test_completion', 'test_timeout',
+      'question_answer', 'question_skip', 'question_flag', 'question_review',
+      'score_achievement', 'grade_received', 'performance_milestone',
+      'skill_demonstration', 'competency_validation', 'portfolio_update',
+      'self_assessment', 'peer_assessment', 'instructor_feedback',
+      'remediation_required', 'advanced_track_unlock', 'placement_test'
+    ],
+
+    // Support & Help Events
+    supportEvents: [
+      'help_request', 'support_ticket_create', 'support_ticket_update',
+      'faq_access', 'tutorial_access', 'guide_download',
+      'chat_support_start', 'chat_support_end', 'call_support_request',
+      'bug_report', 'feature_request', 'technical_issue_report',
+      'accessibility_feature_use', 'language_change', 'preference_update'
+    ],
+
+    // Profile & Administrative Events
+    profileEvents: [
+      'profile_create', 'profile_update', 'profile_complete',
+      'avatar_upload', 'bio_update', 'contact_info_update',
+      'privacy_setting_change', 'notification_preference_update',
+      'learning_path_selection', 'goal_setting', 'goal_update',
+      'calendar_sync', 'reminder_set', 'deadline_extension_request',
+      'subscription_change', 'payment_update', 'billing_info_update'
+    ],
+
+    // Technical & System Events
+    technicalEvents: [
+      'device_info_capture', 'browser_info_capture', 'screen_resolution_capture',
+      'connection_speed_test', 'load_time_measurement', 'error_occurrence',
+      'crash_report', 'performance_metric', 'bandwidth_usage',
+      'offline_mode_usage', 'sync_completion', 'cache_update',
+      'api_call_tracking', 'database_query_log', 'security_event'
+    ]
+  };
+  // Student-focused report data with comprehensive event tracking
+  const studentOverviewData = {
+    totalStudents: 1247,
+    studentGrowth: 12.3,
+    activeStudents: 1089,
+    activeGrowth: 8.5,
+    avgCompletionRate: 73.2,
+    completionGrowth: 4.2,
     avgEngagement: 78.5,
-    engagementGrowth: 5.3,
-    churnRate: 3.2,
-    churnChange: -1.2
+    engagementGrowth: 5.3
   };
 
-  const monthlyRevenueData = [
-    { month: 'Jan', revenue: 85000, tenants: 89, avgContract: 955 },
-    { month: 'Feb', revenue: 92000, tenants: 95, avgContract: 968 },
-    { month: 'Mar', revenue: 98000, tenants: 102, avgContract: 961 },
-    { month: 'Apr', revenue: 105000, tenants: 108, avgContract: 972 },
-    { month: 'May', revenue: 112000, tenants: 115, avgContract: 974 },
-    { month: 'Jun', revenue: 118000, tenants: 121, avgContract: 975 },
-    { month: 'Jul', revenue: 125000, tenants: 127, avgContract: 984 },
-    { month: 'Aug', revenue: 132000, tenants: 134, avgContract: 985 },
-    { month: 'Sep', revenue: 139000, tenants: 141, avgContract: 986 },
-    { month: 'Oct', revenue: 145000, tenants: 147, avgContract: 986 },
-    { month: 'Nov', revenue: 152000, tenants: 154, avgContract: 987 },
-    { month: 'Dec', revenue: 158000, tenants: 160, avgContract: 988 }
+  const studentProgressData = [
+    { month: 'Jan', enrollments: 124, completions: 89, dropouts: 12, active: 945 },
+    { month: 'Feb', enrollments: 156, completions: 102, dropouts: 8, active: 1023 },
+    { month: 'Mar', enrollments: 189, completions: 118, dropouts: 15, active: 1089 },
+    { month: 'Apr', enrollments: 221, completions: 134, dropouts: 11, active: 1156 },
+    { month: 'May', enrollments: 258, completions: 178, dropouts: 9, active: 1247 },
+    { month: 'Jun', enrollments: 284, completions: 198, dropouts: 13, active: 1298 }
   ];
 
   const tenantTierDistribution = [
@@ -389,19 +461,33 @@ export function TenantReportsDashboard() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-luxury">Tenant Business Reports</h1>
-          <p className="text-muted-foreground mt-2">Comprehensive business intelligence and tenant performance analytics</p>
+          <h1 className="text-3xl font-bold text-gradient-luxury">Student Analytics & Reports</h1>
+          <p className="text-muted-foreground mt-2">Comprehensive student learning analytics, performance tracking, and detailed portal event reports</p>
         </div>
         <div className="flex items-center gap-4">
+          <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select student" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Students</SelectItem>
+              {studentReportData.slice(0, 10).map((student) => (
+                <SelectItem key={student.id} value={student.id}>
+                  {student.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={reportType} onValueChange={setReportType}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Report type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="executive">Executive Summary</SelectItem>
-              <SelectItem value="financial">Financial Report</SelectItem>
-              <SelectItem value="operational">Operational Metrics</SelectItem>
-              <SelectItem value="regional">Regional Analysis</SelectItem>
+              <SelectItem value="student-overview">Student Overview</SelectItem>
+              <SelectItem value="learning-analytics">Learning Analytics</SelectItem>
+              <SelectItem value="engagement-tracking">Engagement Tracking</SelectItem>
+              <SelectItem value="performance-reports">Performance Reports</SelectItem>
+              <SelectItem value="event-logs">Event Logs</SelectItem>
             </SelectContent>
           </Select>
           <Select value={timeRange} onValueChange={setTimeRange}>
@@ -422,50 +508,49 @@ export function TenantReportsDashboard() {
         </div>
       </div>
 
-      {/* Executive Summary KPIs */}
+      {/* Student-Focused KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <AnimatedKpiCard
-          label="Total Revenue"
-          value={executiveSummaryData.totalRevenue}
-          change={`+${executiveSummaryData.revenueGrowth}% YoY`}
+          label="Total Students"
+          value={studentOverviewData.totalStudents.toString()}
+          change={`+${studentOverviewData.studentGrowth}% growth`}
           trend="up"
-          icon={DollarSign}
+          icon={Users}
           animationType="progress"
         />
         <AnimatedKpiCard
-          label="Active Tenants"
-          value={executiveSummaryData.totalTenants.toString()}
-          change={`+${executiveSummaryData.tenantGrowth}% growth`}
+          label="Active Learners"
+          value={studentOverviewData.activeStudents.toString()}
+          change={`+${studentOverviewData.activeGrowth}% active`}
           trend="up"
-          icon={Building2}
+          icon={BookOpen}
           animationType="wave"
         />
         <AnimatedKpiCard
-          label="Avg Engagement"
-          value={`${executiveSummaryData.avgEngagement}%`}
-          change={`+${executiveSummaryData.engagementGrowth}% from last period`}
+          label="Avg Completion"
+          value={`${studentOverviewData.avgCompletionRate}%`}
+          change={`+${studentOverviewData.completionGrowth}% improvement`}
           trend="up"
-          icon={Activity}
+          icon={Trophy}
           animationType="geometric"
         />
         <AnimatedKpiCard
-          label="Churn Rate"
-          value={`${executiveSummaryData.churnRate}%`}
-          change={`${executiveSummaryData.churnChange}% improvement`}
-          trend="down"
-          icon={Target}
+          label="Engagement Score"
+          value={`${studentOverviewData.avgEngagement}%`}
+          change={`+${studentOverviewData.engagementGrowth}% from last period`}
+          trend="up"
+          icon={Activity}
           animationType="pulse"
         />
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-          <TabsTrigger value="tenants">Tenants</TabsTrigger>
-          <TabsTrigger value="retention">Retention</TabsTrigger>
-          <TabsTrigger value="regional">Regional</TabsTrigger>
-          <TabsTrigger value="students">Student Reports</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Student Overview</TabsTrigger>
+          <TabsTrigger value="learning">Learning Analytics</TabsTrigger>
+          <TabsTrigger value="engagement">Engagement Tracking</TabsTrigger>
+          <TabsTrigger value="events">Portal Events</TabsTrigger>
+          <TabsTrigger value="reports">Individual Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -474,13 +559,13 @@ export function TenantReportsDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-primary" />
-                  Monthly Revenue Trend
+                  Student Progress Trends
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={monthlyRevenueData}>
+                    <AreaChart data={studentProgressData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis 
                         dataKey="month" 
@@ -496,11 +581,19 @@ export function TenantReportsDashboard() {
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Area 
                         type="monotone" 
-                        dataKey="revenue" 
+                        dataKey="active" 
                         stroke="hsl(var(--primary))" 
                         fill="hsl(var(--primary))" 
                         fillOpacity={0.2}
                         strokeWidth={3}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="completions" 
+                        stroke="hsl(var(--secondary))" 
+                        fill="hsl(var(--secondary))" 
+                        fillOpacity={0.2}
+                        strokeWidth={2}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -512,7 +605,7 @@ export function TenantReportsDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChartIcon className="w-5 h-5 text-secondary" />
-                  Tier Distribution
+                  Performance Distribution
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -520,19 +613,29 @@ export function TenantReportsDashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={tenantTierDistribution}
+                        data={[
+                          { performance: 'Excellent', count: 2, color: '#10b981' },
+                          { performance: 'Good', count: 2, color: '#3b82f6' },
+                          { performance: 'Needs Attention', count: 1, color: '#f59e0b' },
+                          { performance: 'At Risk', count: 1, color: '#ef4444' }
+                        ]}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
                         outerRadius={100}
                         fill="hsl(var(--primary))"
                         dataKey="count"
-                        label={({ tier, percent }) => `${tier} ${(percent * 100).toFixed(0)}%`}
+                        label={({ performance, percent }) => `${performance} ${(percent * 100).toFixed(0)}%`}
                       >
-                        {tenantTierDistribution.map((entry, index) => (
+                        {[
+                          { performance: 'Excellent', count: 2 },
+                          { performance: 'Good', count: 2 },
+                          { performance: 'Needs Attention', count: 1 },
+                          { performance: 'At Risk', count: 1 }
+                        ].map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill={`hsl(var(--primary) / ${0.8 - (index * 0.15)})`} 
+                            fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444'][index]} 
                           />
                         ))}
                       </Pie>
@@ -543,125 +646,47 @@ export function TenantReportsDashboard() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
 
-          {/* Top Performing Tenants */}
+        <TabsContent value="learning" className="space-y-6">
           <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-primary" />
-                Top Performing Tenants
+                <BookOpen className="w-5 h-5 text-primary" />
+                Learning Analytics Dashboard
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {topPerformingTenants.map((tenant, index) => (
-                  <div key={tenant.name} className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border/50">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
-                        <Building2 className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold">{tenant.name}</p>
-                          <Badge variant="outline" className="text-xs">
-                            {tenant.tier}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                          <span>{tenant.users} users</span>
-                          <span>{tenant.engagement}% engagement</span>
-                          <span>★ {tenant.satisfaction}/5.0</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-sm font-medium">${tenant.revenue.toLocaleString()}/mo</p>
-                        <p className="text-xs text-muted-foreground">Expires: {tenant.contractExpiry}</p>
-                      </div>
-                      <Badge className={`${getStatusColor(tenant.status)} flex items-center gap-1`}>
-                        {getStatusIcon(tenant.status)}
-                        {tenant.status === 'renewal-risk' ? 'At Risk' : tenant.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-4 bg-background/50 rounded-lg">
+                  <div className="text-2xl font-bold text-primary">89.2%</div>
+                  <div className="text-sm text-muted-foreground">Course Start Rate</div>
+                </div>
+                <div className="text-center p-4 bg-background/50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">73.5%</div>
+                  <div className="text-sm text-muted-foreground">Completion Rate</div>
+                </div>
+                <div className="text-center p-4 bg-background/50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">42min</div>
+                  <div className="text-sm text-muted-foreground">Avg Session Time</div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="revenue" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {tenantTierDistribution.map((tier) => (
-              <Card key={tier.tier} className="glass-card">
-                <CardContent className="p-6">
-                  <div className="text-center space-y-2">
-                    <h3 className="text-lg font-semibold">{tier.tier}</h3>
-                    <div className="text-2xl font-bold text-primary">
-                      ${(tier.revenue / 1000).toFixed(0)}K
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {tier.count} tenants • Avg {tier.avgUsers} users
-                    </div>
-                    <Progress 
-                      value={(tier.revenue / Math.max(...tenantTierDistribution.map(t => t.revenue))) * 100} 
-                      className="mt-4"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
+        <TabsContent value="engagement" className="space-y-6">
           <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                Revenue Growth by Month
+                <Activity className="w-5 h-5 text-primary" />
+                Student Engagement Metrics
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyRevenueData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="month" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar 
-                      dataKey="revenue" 
-                      fill="hsl(var(--primary))"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tenants" className="space-y-6">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
-                Tenant Growth Trends
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyRevenueData}>
+                  <LineChart data={studentProgressData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="month" 
@@ -677,14 +702,14 @@ export function TenantReportsDashboard() {
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Line 
                       type="monotone" 
-                      dataKey="tenants" 
+                      dataKey="active" 
                       stroke="hsl(var(--primary))" 
                       strokeWidth={3}
                       dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 6 }}
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="avgContract" 
+                      dataKey="enrollments" 
                       stroke="hsl(var(--secondary))" 
                       strokeWidth={3}
                       dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2, r: 6 }}
@@ -696,103 +721,44 @@ export function TenantReportsDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="retention" className="space-y-6">
+        <TabsContent value="events" className="space-y-6">
+          {/* Portal Events Comprehensive List */}
           <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                Retention & Churn Analysis
+                <Brain className="w-5 h-5 text-primary" />
+                Student Portal Events Tracking
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={retentionData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="month" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="retention" 
-                      stroke="hsl(var(--primary))" 
-                      fill="hsl(var(--primary))" 
-                      fillOpacity={0.2}
-                      strokeWidth={3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="regional" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {regionalPerformance.map((region) => (
-              <Card key={region.region} className="glass-card">
-                <CardContent className="p-4">
-                  <div className="text-center space-y-2">
-                    <div className="flex items-center justify-center gap-2">
-                      <Globe className="w-4 h-4 text-primary" />
-                      <h3 className="font-semibold text-sm">{region.region}</h3>
-                    </div>
-                    <div className="text-xl font-bold text-primary">{region.tenants}</div>
-                    <div className="text-xs text-muted-foreground">Active Tenants</div>
-                    <div className="text-lg font-semibold">${(region.revenue / 1000).toFixed(0)}K</div>
-                    <div className={`text-xs font-medium ${region.growth > 20 ? 'text-green-600' : 'text-blue-600'}`}>
-                      +{region.growth}% growth
+              <div className="space-y-6">
+                {Object.entries(studentPortalEvents).map(([category, events]) => (
+                  <div key={category} className="space-y-3">
+                    <h3 className="font-semibold text-lg capitalize flex items-center gap-2">
+                      {category === 'learningEvents' && <BookOpen className="w-5 h-5 text-primary" />}
+                      {category === 'engagementEvents' && <Activity className="w-5 h-5 text-secondary" />}
+                      {category === 'socialEvents' && <MessageSquare className="w-5 h-5 text-accent" />}
+                      {category === 'assessmentEvents' && <Trophy className="w-5 h-5 text-green-600" />}
+                      {category === 'supportEvents' && <AlertTriangle className="w-5 h-5 text-yellow-600" />}
+                      {category === 'profileEvents' && <Users className="w-5 h-5 text-purple-600" />}
+                      {category === 'technicalEvents' && <Shield className="w-5 h-5 text-red-600" />}
+                      {category.replace('Events', '').replace(/([A-Z])/g, ' $1').trim()}
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {events.map((event, index) => (
+                        <div key={index} className="text-xs p-2 bg-background/30 rounded border border-border/50">
+                          {event.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-primary" />
-                Regional Revenue Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={regionalPerformance} layout="horizontal">
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" axisLine={false} tickLine={false} />
-                    <YAxis 
-                      type="category" 
-                      dataKey="region"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                      width={100}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar 
-                      dataKey="revenue" 
-                      fill="hsl(var(--primary))"
-                      radius={[0, 4, 4, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="students" className="space-y-6">
+        <TabsContent value="reports" className="space-y-6">
           {/* Student Report Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="glass-card">
@@ -833,16 +799,16 @@ export function TenantReportsDashboard() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  Student Activity & Performance Reports
+                  Individual Student Reports
                 </CardTitle>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm">
                     <Filter className="w-4 h-4 mr-2" />
-                    Filter
+                    Filter by Performance
                   </Button>
                   <Button variant="outline" size="sm">
                     <Download className="w-4 h-4 mr-2" />
-                    Export CSV
+                    Export All Reports
                   </Button>
                 </div>
               </div>
@@ -883,11 +849,48 @@ export function TenantReportsDashboard() {
                       </div>
                     </div>
 
-                    {/* Key Metrics Grid */}
+                    {/* Comprehensive Portal Event Summary */}
+                    <div className="mb-4">
+                      <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        Portal Event Summary Report
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <div className="font-medium text-blue-800 mb-2">Learning Activities</div>
+                          <div className="space-y-1 text-xs">
+                            <div>Course Enrollments: {student.coursesStarted}</div>
+                            <div>Video Interactions: {student.events.videoViews}</div>
+                            <div>Chapter Completions: {student.events.chapterCompletions}</div>
+                            <div>Certificates Earned: {student.events.certificateDownloads}</div>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <div className="font-medium text-green-800 mb-2">Engagement Metrics</div>
+                          <div className="space-y-1 text-xs">
+                            <div>Total Sessions: {student.totalSessions}</div>
+                            <div>Login Events: {student.events.logins}</div>
+                            <div>Search Queries: {student.events.searchQueries}</div>
+                            <div>Forum Participation: {student.forumPosts}</div>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-purple-50 rounded-lg">
+                          <div className="font-medium text-purple-800 mb-2">Assessment Performance</div>
+                          <div className="space-y-1 text-xs">
+                            <div>Quizzes Taken: {student.quizzesTaken}</div>
+                            <div>Average Score: {student.quizAvgScore}%</div>
+                            <div>Help Requests: {student.helpRequests}</div>
+                            <div>Learning Streak: {student.streakDays} days</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Key Performance Indicators */}
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
                       <div className="text-center p-3 bg-background/30 rounded-lg">
                         <div className="text-lg font-bold text-primary">{student.totalSessions}</div>
-                        <div className="text-xs text-muted-foreground">Sessions</div>
+                        <div className="text-xs text-muted-foreground">Total Sessions</div>
                       </div>
                       <div className="text-center p-3 bg-background/30 rounded-lg">
                         <div className="text-lg font-bold text-secondary">{student.watchTime}h</div>
@@ -899,7 +902,7 @@ export function TenantReportsDashboard() {
                       </div>
                       <div className="text-center p-3 bg-background/30 rounded-lg">
                         <div className="text-lg font-bold text-green-600">{student.quizAvgScore}%</div>
-                        <div className="text-xs text-muted-foreground">Quiz Avg</div>
+                        <div className="text-xs text-muted-foreground">Quiz Average</div>
                       </div>
                       <div className="text-center p-3 bg-background/30 rounded-lg">
                         <div className="text-lg font-bold text-blue-600">{student.streakDays}</div>
@@ -911,11 +914,11 @@ export function TenantReportsDashboard() {
                       </div>
                     </div>
 
-                    {/* Portal Events & Activities */}
+                    {/* Detailed Event Tracking */}
                     <div className="space-y-3">
                       <h4 className="font-medium text-sm flex items-center gap-2">
                         <Activity className="w-4 h-4" />
-                        Portal Activity Events
+                        Captured Portal Events
                       </h4>
                       
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
@@ -923,21 +926,21 @@ export function TenantReportsDashboard() {
                           <MousePointer className="w-4 h-4 text-blue-600" />
                           <div>
                             <div className="font-medium">{student.events.logins}</div>
-                            <div className="text-xs text-muted-foreground">Logins</div>
+                            <div className="text-xs text-muted-foreground">Login Events</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
                           <Play className="w-4 h-4 text-green-600" />
                           <div>
                             <div className="font-medium">{student.events.videoViews}</div>
-                            <div className="text-xs text-muted-foreground">Video Views</div>
+                            <div className="text-xs text-muted-foreground">Video Interactions</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
                           <CheckCircle className="w-4 h-4 text-purple-600" />
                           <div>
                             <div className="font-medium">{student.events.chapterCompletions}</div>
-                            <div className="text-xs text-muted-foreground">Completions</div>
+                            <div className="text-xs text-muted-foreground">Content Completions</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded-lg">
@@ -951,7 +954,7 @@ export function TenantReportsDashboard() {
                           <Search className="w-4 h-4 text-orange-600" />
                           <div>
                             <div className="font-medium">{student.events.searchQueries}</div>
-                            <div className="text-xs text-muted-foreground">Searches</div>
+                            <div className="text-xs text-muted-foreground">Search Events</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-indigo-50 rounded-lg">
@@ -963,10 +966,10 @@ export function TenantReportsDashboard() {
                         </div>
                       </div>
 
-                      {/* Course Progress & Engagement */}
+                      {/* Progress Summary */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-border/50">
                         <div>
-                          <h5 className="font-medium text-sm mb-2">Course Progress</h5>
+                          <h5 className="font-medium text-sm mb-2">Learning Progress Report</h5>
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Courses Started</span>
@@ -977,7 +980,7 @@ export function TenantReportsDashboard() {
                               <span className="font-medium">{student.coursesCompleted}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span>Completion Rate</span>
+                              <span>Overall Completion Rate</span>
                               <span className="font-medium">{student.completionRate}%</span>
                             </div>
                             <Progress value={student.completionRate} className="h-2" />
@@ -985,21 +988,25 @@ export function TenantReportsDashboard() {
                         </div>
                         
                         <div>
-                          <h5 className="font-medium text-sm mb-2">Support & Engagement</h5>
+                          <h5 className="font-medium text-sm mb-2">Support & Engagement Analysis</h5>
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span>Quizzes Taken</span>
+                              <span>Assessment Attempts</span>
                               <span className="font-medium">{student.quizzesTaken}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span>Forum Posts</span>
-                              <span className="font-medium">{student.forumPosts}</span>
+                              <span>Community Participation</span>
+                              <span className="font-medium">{student.forumPosts} posts</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span>Help Requests</span>
+                              <span>Support Interactions</span>
                               <span className={`font-medium ${student.helpRequests > 5 ? 'text-yellow-600' : 'text-green-600'}`}>
-                                {student.helpRequests}
+                                {student.helpRequests} requests
                               </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span>Profile Updates</span>
+                              <span className="font-medium">{student.events.profileUpdates}</span>
                             </div>
                           </div>
                         </div>
