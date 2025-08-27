@@ -160,8 +160,7 @@ export function StudentManagement() {
     name: '',
     email: '',
     graduationYear: new Date().getFullYear(),
-    batch: '',
-    careerChoice: ''
+    batch: ''
   });
 
   const handleAddStudent = () => {
@@ -184,8 +183,7 @@ export function StudentManagement() {
       name: '',
       email: '',
       graduationYear: new Date().getFullYear(),
-      batch: '',
-      careerChoice: ''
+      batch: ''
     });
   };
 
@@ -348,21 +346,6 @@ export function StudentManagement() {
                   value={newStudent.batch}
                   onChange={(e) => setNewStudent({ ...newStudent, batch: e.target.value })}
                 />
-                <Select
-                  value={newStudent.careerChoice}
-                  onValueChange={(value) => setNewStudent({ ...newStudent, careerChoice: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Career Choice" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Software Engineer">Software Engineer</SelectItem>
-                    <SelectItem value="Data Scientist">Data Scientist</SelectItem>
-                    <SelectItem value="Product Manager">Product Manager</SelectItem>
-                    <SelectItem value="DevOps Engineer">DevOps Engineer</SelectItem>
-                    <SelectItem value="Financial Analyst">Financial Analyst</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Button onClick={handleAddStudent} className="w-full">
                   Add Student
                 </Button>
