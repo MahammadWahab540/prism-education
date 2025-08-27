@@ -10,6 +10,7 @@ import Roadmap from "@/pages/Roadmap";
 import LearningPage from "@/pages/LearningPage";
 import CourseManagement from "@/pages/CourseManagement";
 import Tenants from "@/pages/Tenants";
+import Analytics from "@/pages/Analytics";
 import NotFound from "@/pages/NotFound";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
               <Route path="/learn/:skillId/:stageId" element={<LearningPage />} />
               <Route path="/course-management" element={<CourseManagement />} />
               <Route path="/tenants" element={<Tenants />} />
+              <Route path="/analytics" element={<Analytics />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
