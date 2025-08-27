@@ -27,7 +27,10 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Upload,
+  FileText,
+  Briefcase
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,9 +39,11 @@ interface Student {
   id: string;
   name: string;
   email: string;
-  department: string;
-  enrolledCourses: number;
-  completedCourses: number;
+  graduationYear: number;
+  batch: string;
+  careerChoice?: string;
+  enrolledSkills: number;
+  completedSkills: number;
   overallProgress: number;
   lastActive: Date;
   enrollmentDate: Date;
@@ -54,10 +59,12 @@ export function StudentManagement() {
     {
       id: '1',
       name: 'Alice Johnson',
-      email: 'alice.johnson@techcorp.com',
-      department: 'Engineering',
-      enrolledCourses: 5,
-      completedCourses: 3,
+      email: 'alice.johnson@university.edu',
+      graduationYear: 2025,
+      batch: 'CS-2025-A',
+      careerChoice: 'Software Engineer',
+      enrolledSkills: 5,
+      completedSkills: 3,
       overallProgress: 78,
       lastActive: new Date('2024-08-26'),
       enrollmentDate: new Date('2024-01-15'),
@@ -70,10 +77,12 @@ export function StudentManagement() {
     {
       id: '2',
       name: 'Bob Smith',
-      email: 'bob.smith@techcorp.com',
-      department: 'Marketing',
-      enrolledCourses: 3,
-      completedCourses: 1,
+      email: 'bob.smith@university.edu',
+      graduationYear: 2026,
+      batch: 'BBA-2026-B',
+      careerChoice: 'Product Manager',
+      enrolledSkills: 3,
+      completedSkills: 1,
       overallProgress: 45,
       lastActive: new Date('2024-08-25'),
       enrollmentDate: new Date('2024-02-01'),
@@ -86,10 +95,12 @@ export function StudentManagement() {
     {
       id: '3',
       name: 'Carol Williams',
-      email: 'carol.williams@techcorp.com',
-      department: 'HR',
-      enrolledCourses: 4,
-      completedCourses: 4,
+      email: 'carol.williams@university.edu',
+      graduationYear: 2025,
+      batch: 'MBA-2025-A',
+      careerChoice: 'Data Scientist',
+      enrolledSkills: 4,
+      completedSkills: 4,
       overallProgress: 100,
       lastActive: new Date('2024-08-24'),
       enrollmentDate: new Date('2024-01-10'),
@@ -102,10 +113,12 @@ export function StudentManagement() {
     {
       id: '4',
       name: 'David Brown',
-      email: 'david.brown@techcorp.com',
-      department: 'Engineering',
-      enrolledCourses: 2,
-      completedCourses: 0,
+      email: 'david.brown@university.edu',
+      graduationYear: 2026,
+      batch: 'CS-2026-B',
+      careerChoice: 'DevOps Engineer',
+      enrolledSkills: 2,
+      completedSkills: 0,
       overallProgress: 15,
       lastActive: new Date('2024-08-15'),
       enrollmentDate: new Date('2024-08-01'),
@@ -118,10 +131,12 @@ export function StudentManagement() {
     {
       id: '5',
       name: 'Emma Davis',
-      email: 'emma.davis@techcorp.com',
-      department: 'Finance',
-      enrolledCourses: 6,
-      completedCourses: 2,
+      email: 'emma.davis@university.edu',
+      graduationYear: 2024,
+      batch: 'Finance-2024-A',
+      careerChoice: 'Financial Analyst',
+      enrolledSkills: 6,
+      completedSkills: 2,
       overallProgress: 62,
       lastActive: new Date('2024-08-26'),
       enrollmentDate: new Date('2024-01-20'),
@@ -134,22 +149,27 @@ export function StudentManagement() {
   ]);
 
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [isUploadCsvOpen, setIsUploadCsvOpen] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [graduationYearFilter, setGraduationYearFilter] = useState('all');
+  const [careerChoiceFilter, setCareerChoiceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [newStudent, setNewStudent] = useState({
     name: '',
     email: '',
-    department: ''
+    graduationYear: new Date().getFullYear(),
+    batch: '',
+    careerChoice: ''
   });
 
   const handleAddStudent = () => {
     const student: Student = {
       id: Date.now().toString(),
       ...newStudent,
-      enrolledCourses: 0,
-      completedCourses: 0,
+      enrolledSkills: 0,
+      completedSkills: 0,
       overallProgress: 0,
       lastActive: new Date(),
       enrollmentDate: new Date(),
@@ -163,8 +183,47 @@ export function StudentManagement() {
     setNewStudent({
       name: '',
       email: '',
-      department: ''
+      graduationYear: new Date().getFullYear(),
+      batch: '',
+      careerChoice: ''
     });
+  };
+
+  const handleCsvUpload = () => {
+    if (!csvFile) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const csv = event.target?.result as string;
+      const lines = csv.split('\n');
+      const headers = lines[0].split(',');
+      
+      const newStudents = lines.slice(1).filter(line => line.trim()).map((line, index) => {
+        const values = line.split(',');
+        return {
+          id: (Date.now() + index).toString(),
+          name: values[0]?.trim() || '',
+          email: values[1]?.trim() || '',
+          graduationYear: parseInt(values[2]?.trim()) || new Date().getFullYear(),
+          batch: values[3]?.trim() || '',
+          careerChoice: values[4]?.trim() || '',
+          enrolledSkills: 0,
+          completedSkills: 0,
+          overallProgress: 0,
+          lastActive: new Date(),
+          enrollmentDate: new Date(),
+          status: 'active' as const,
+          totalWatchTime: 0,
+          quizzesCompleted: 0,
+          averageScore: 0
+        };
+      });
+      
+      setStudents([...students, ...newStudents]);
+      setIsUploadCsvOpen(false);
+      setCsvFile(null);
+    };
+    reader.readAsText(csvFile);
   };
 
   const getStatusColor = (status: string) => {
@@ -201,18 +260,21 @@ export function StudentManagement() {
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = departmentFilter === 'all' || student.department === departmentFilter;
+                         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.careerChoice?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGraduationYear = graduationYearFilter === 'all' || student.graduationYear.toString() === graduationYearFilter;
+    const matchesCareerChoice = careerChoiceFilter === 'all' || student.careerChoice === careerChoiceFilter;
     const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
-    return matchesSearch && matchesDepartment && matchesStatus;
+    return matchesSearch && matchesGraduationYear && matchesCareerChoice && matchesStatus;
   });
 
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === 'active').length;
   const avgProgress = Math.round(students.reduce((sum, s) => sum + s.overallProgress, 0) / students.length);
-  const totalCompletions = students.reduce((sum, s) => sum + s.completedCourses, 0);
+  const totalCompletions = students.reduce((sum, s) => sum + s.completedSkills, 0);
 
-  const departments = [...new Set(students.map(s => s.department))];
+  const graduationYears = [...new Set(students.map(s => s.graduationYear))].sort((a, b) => b - a);
+  const careerChoices = [...new Set(students.map(s => s.careerChoice).filter(Boolean))] as string[];
 
   return (
     <div className="space-y-8">
@@ -221,11 +283,37 @@ export function StudentManagement() {
           <h1 className="text-3xl font-bold text-gradient-luxury">Student Management</h1>
           <p className="text-muted-foreground mt-2">Manage learners and track their progress</p>
         </div>
-        <div className="flex gap-3">
+                <div className="flex gap-3">
           <Button variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Export Data
           </Button>
+          <Dialog open={isUploadCsvOpen} onOpenChange={setIsUploadCsvOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upload Student CSV</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  CSV format: Name, Email, Graduation Year, Batch, Career Choice
+                </p>
+                <Input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                />
+                <Button onClick={handleCsvUpload} disabled={!csvFile} className="w-full">
+                  Upload Students
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium">
@@ -249,19 +337,30 @@ export function StudentManagement() {
                   value={newStudent.email}
                   onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
                 />
+                <Input
+                  placeholder="Graduation Year"
+                  type="number"
+                  value={newStudent.graduationYear}
+                  onChange={(e) => setNewStudent({ ...newStudent, graduationYear: parseInt(e.target.value) || new Date().getFullYear() })}
+                />
+                <Input
+                  placeholder="Batch (e.g., CS-2025-A)"
+                  value={newStudent.batch}
+                  onChange={(e) => setNewStudent({ ...newStudent, batch: e.target.value })}
+                />
                 <Select
-                  value={newStudent.department}
-                  onValueChange={(value) => setNewStudent({ ...newStudent, department: value })}
+                  value={newStudent.careerChoice}
+                  onValueChange={(value) => setNewStudent({ ...newStudent, careerChoice: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Department" />
+                    <SelectValue placeholder="Select Career Choice" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Engineering">Engineering</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                    <SelectItem value="HR">Human Resources</SelectItem>
-                    <SelectItem value="Finance">Finance</SelectItem>
-                    <SelectItem value="Sales">Sales</SelectItem>
+                    <SelectItem value="Software Engineer">Software Engineer</SelectItem>
+                    <SelectItem value="Data Scientist">Data Scientist</SelectItem>
+                    <SelectItem value="Product Manager">Product Manager</SelectItem>
+                    <SelectItem value="DevOps Engineer">DevOps Engineer</SelectItem>
+                    <SelectItem value="Financial Analyst">Financial Analyst</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button onClick={handleAddStudent} className="w-full">
@@ -360,14 +459,25 @@ export function StudentManagement() {
                     />
                   </div>
                 </div>
-                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <Select value={graduationYearFilter} onValueChange={setGraduationYearFilter}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Department" />
+                    <SelectValue placeholder="Graduation Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Departments</SelectItem>
-                    {departments.map(dept => (
-                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem value="all">All Years</SelectItem>
+                    {graduationYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={careerChoiceFilter} onValueChange={setCareerChoiceFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Career Choice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Careers</SelectItem>
+                    {careerChoices.map(career => (
+                      <SelectItem key={career} value={career}>{career}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -398,7 +508,8 @@ export function StudentManagement() {
                       <Checkbox />
                     </TableHead>
                     <TableHead>Student</TableHead>
-                    <TableHead>Department</TableHead>
+                    <TableHead>Batch/Year</TableHead>
+                    <TableHead>Career Choice</TableHead>
                     <TableHead>Current Skill</TableHead>
                     <TableHead>Progress</TableHead>
                     <TableHead>Status</TableHead>
@@ -420,7 +531,16 @@ export function StudentManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{student.department}</Badge>
+                        <div className="text-sm">
+                          <div className="font-medium">{student.batch}</div>
+                          <div className="text-muted-foreground">{student.graduationYear}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          <Briefcase className="w-3 h-3 mr-1" />
+                          {student.careerChoice || 'Not selected'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
@@ -430,7 +550,7 @@ export function StudentManagement() {
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex justify-between text-sm">
-                            <span>{student.completedCourses}/{student.enrolledCourses}</span>
+                            <span>{student.completedSkills}/{student.enrolledSkills}</span>
                             <span>{student.overallProgress}%</span>
                           </div>
                           <Progress value={student.overallProgress} className="h-2" />
@@ -465,7 +585,7 @@ export function StudentManagement() {
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <BookOpen className="w-4 h-4 mr-2" />
-                              Assign Course
+                              Assign Skill
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Mail className="w-4 h-4 mr-2" />
