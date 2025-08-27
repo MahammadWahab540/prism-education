@@ -623,16 +623,16 @@ export function StudentManagement() {
                           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium">
                             {index + 1}
                           </div>
-                          <div>
-                            <p className="font-medium">{student.name}</p>
-                            <p className="text-sm text-muted-foreground">{student.department}</p>
-                          </div>
+                           <div>
+                             <p className="font-medium">{student.name}</p>
+                             <p className="text-sm text-muted-foreground">{student.careerChoice || student.batch}</p>
+                           </div>
                         </div>
                         <div className="text-right">
                           <Badge variant="secondary">{student.overallProgress}%</Badge>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {student.completedCourses} completed
-                          </p>
+                           <p className="text-xs text-muted-foreground mt-1">
+                             {student.completedSkills} completed
+                           </p>
                         </div>
                       </div>
                     ))}
@@ -653,10 +653,10 @@ export function StudentManagement() {
                       <div key={student.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                          <div>
-                            <p className="font-medium">{student.name}</p>
-                            <p className="text-sm text-muted-foreground">{student.department}</p>
-                          </div>
+                           <div>
+                             <p className="font-medium">{student.name}</p>
+                             <p className="text-sm text-muted-foreground">{student.careerChoice || student.batch}</p>
+                           </div>
                         </div>
                         <div className="text-right">
                           <Badge variant="outline" className="text-yellow-600">
@@ -676,28 +676,28 @@ export function StudentManagement() {
 
         <TabsContent value="analytics" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Department Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {departments.map((dept) => {
-                    const count = students.filter(s => s.department === dept).length;
-                    const percentage = Math.round((count / totalStudents) * 100);
-                    return (
-                      <div key={dept} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span>{dept}</span>
-                          <span>{count} ({percentage}%)</span>
-                        </div>
-                        <Progress value={percentage} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+             <Card className="glass-card">
+               <CardHeader>
+                 <CardTitle>Career Choice Distribution</CardTitle>
+               </CardHeader>
+               <CardContent>
+                 <div className="space-y-3">
+                   {careerChoices.map((career) => {
+                     const count = students.filter(s => s.careerChoice === career).length;
+                     const percentage = Math.round((count / totalStudents) * 100);
+                     return (
+                       <div key={career} className="space-y-1">
+                         <div className="flex justify-between text-sm">
+                           <span>{career}</span>
+                           <span>{count} ({percentage}%)</span>
+                         </div>
+                         <Progress value={percentage} className="h-2" />
+                       </div>
+                     );
+                   })}
+                 </div>
+               </CardContent>
+             </Card>
 
             <Card className="glass-card">
               <CardHeader>
