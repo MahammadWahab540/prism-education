@@ -94,11 +94,17 @@ export function CourseManagement() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
   const [isCreateStageOpen, setIsCreateStageOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({
+  const [newCourse, setNewCourse] = useState<{
+    title: string;
+    description: string;
+    category: string;
+    difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+    estimatedHours: number;
+  }>({
     title: '',
     description: '',
     category: '',
-    difficulty: 'Beginner' as const,
+    difficulty: 'Beginner',
     estimatedHours: 0
   });
   const [newStage, setNewStage] = useState({
