@@ -261,8 +261,8 @@ export function TenantAnalyticsDashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-primary" />
-                  Tenant Performance Overview
+                  <Users className="w-5 h-5 text-primary" />
+                  Student Performance Overview
                 </CardTitle>
                 <Button variant="outline" size="sm">
                   <Filter className="w-4 h-4 mr-2" />
