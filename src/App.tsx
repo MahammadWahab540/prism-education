@@ -12,6 +12,7 @@ import CourseManagement from "@/pages/CourseManagement";
 import Tenants from "@/pages/Tenants";
 import Analytics from "@/pages/Analytics";
 import SystemUsers from "@/pages/SystemUsers";
+import Students from "@/pages/Students";
 import NotFound from "@/pages/NotFound";
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
               <Route path="/tenants" element={<Tenants />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/system-users" element={<SystemUsers />} />
+              <Route path="/students" element={<Students />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
