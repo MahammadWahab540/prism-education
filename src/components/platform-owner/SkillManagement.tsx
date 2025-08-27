@@ -33,10 +33,14 @@ interface Skill {
 interface Stage {
   id: string;
   name: string;
+  description: string;
   link: string;
   aiTutorGenerated: boolean;
   caseStudyGenerated: boolean;
   quizGenerated: boolean;
+  aiTutorContent?: string;
+  caseStudyContent?: string;
+  quizContent?: string;
 }
 
 export function SkillManagement() {
@@ -50,14 +54,19 @@ export function SkillManagement() {
         {
           id: 'stage-1',
           name: 'Introduction to Quantum Physics',
+          description: 'Learn the fundamental principles of quantum physics and how they apply to computing.',
           link: 'https://www.youtube.com/watch?v=example1',
           aiTutorGenerated: true,
           caseStudyGenerated: true,
-          quizGenerated: true
+          quizGenerated: true,
+          aiTutorContent: 'I am your AI tutor for quantum physics fundamentals. I can help you understand concepts like wave-particle duality, quantum superposition, and the uncertainty principle as they relate to quantum computing.',
+          caseStudyContent: 'Case Study: IBM\'s quantum computer successfully demonstrated quantum supremacy by solving a complex optimization problem that would take classical computers thousands of years.',
+          quizContent: 'Quiz: What is quantum superposition? A) A particle being in multiple states simultaneously B) A particle moving very fast C) A particle being very small'
         },
         {
           id: 'stage-2',
           name: 'Qubits and Quantum States',
+          description: 'Understand how qubits work and differ from classical bits, including quantum states and measurement.',
           link: 'https://drive.google.com/file/d/example2',
           aiTutorGenerated: false,
           caseStudyGenerated: false,
@@ -80,6 +89,7 @@ export function SkillManagement() {
   });
   const [newStage, setNewStage] = useState({
     name: '',
+    description: '',
     link: ''
   });
 
@@ -122,25 +132,48 @@ export function SkillManagement() {
     setIsCreateStageOpen(false);
     setNewStage({
       name: '',
+      description: '',
       link: ''
     });
   };
 
   const generateAIContent = (skillId: string, stageId: string, contentType: 'tutor' | 'caseStudy' | 'quiz') => {
-    const updatedSkills = skills.map(skill => 
-      skill.id === skillId 
+    const skill = skills.find(s => s.id === skillId);
+    const stage = skill?.stages.find(s => s.id === stageId);
+    
+    if (!skill || !stage) return;
+
+    // Generate content based on stage description
+    let generatedContent = '';
+    const contentKey = `${contentType === 'tutor' ? 'aiTutor' : contentType}Content`;
+    
+    switch (contentType) {
+      case 'tutor':
+        generatedContent = `I am your AI tutor for "${stage.name}". Based on the topic: ${stage.description}. I can help you understand the key concepts, answer questions, and provide detailed explanations tailored to this specific stage.`;
+        break;
+      case 'caseStudy':
+        generatedContent = `Case Study for "${stage.name}": Real-world application of ${stage.description}. This case study demonstrates practical implementation and industry examples related to this topic.`;
+        break;
+      case 'quiz':
+        generatedContent = `Quiz for "${stage.name}": Test your understanding of ${stage.description}. This interactive quiz covers the key concepts and helps reinforce your learning.`;
+        break;
+    }
+
+    const updatedSkills = skills.map(s => 
+      s.id === skillId 
         ? {
-            ...skill,
-            stages: skill.stages.map(stage => 
-              stage.id === stageId 
+            ...s,
+            stages: s.stages.map(st => 
+              st.id === stageId 
                 ? {
-                    ...stage,
-                    [`${contentType === 'tutor' ? 'aiTutor' : contentType}Generated`]: true
+                    ...st,
+                    [`${contentType === 'tutor' ? 'aiTutor' : contentType}Generated`]: true,
+                    [contentKey]: generatedContent
                   }
-                : stage
+                : st
             )
           }
-        : skill
+        : s
     );
     
     setSkills(updatedSkills);
@@ -298,6 +331,12 @@ export function SkillManagement() {
                         value={newStage.name}
                         onChange={(e) => setNewStage({ ...newStage, name: e.target.value })}
                       />
+                      <Textarea
+                        placeholder="Stage Description (AI will use this to generate content)"
+                        value={newStage.description}
+                        onChange={(e) => setNewStage({ ...newStage, description: e.target.value })}
+                        rows={3}
+                      />
                       <Input
                         placeholder="Stage Link (YouTube/Google Drive/Other)"
                         value={newStage.link}
@@ -322,7 +361,10 @@ export function SkillManagement() {
                               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium">
                                 {index + 1}
                               </div>
-                              <h3 className="text-lg font-semibold">{stage.name}</h3>
+                              <div>
+                                <h3 className="text-lg font-semibold">{stage.name}</h3>
+                                <p className="text-sm text-muted-foreground">{stage.description}</p>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2 ml-11 text-sm text-muted-foreground">
                               <ExternalLink className="w-4 h-4" />
@@ -339,13 +381,15 @@ export function SkillManagement() {
                           </div>
                         </div>
 
-                        <div className="ml-11 space-y-3">
+                        <div className="ml-11 space-y-4">
                           <h4 className="font-medium text-sm text-muted-foreground">AI-Generated Content</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          
+                          {/* AI Tutor Section */}
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
                               <div className="flex items-center gap-2">
                                 <Brain className="w-4 h-4" />
-                                <span className="text-sm">AI Tutor</span>
+                                <span className="text-sm font-medium">AI Tutor</span>
                               </div>
                               {stage.aiTutorGenerated ? (
                                 <Badge variant="default">Generated</Badge>
@@ -360,11 +404,19 @@ export function SkillManagement() {
                                 </Button>
                               )}
                             </div>
+                            {stage.aiTutorGenerated && stage.aiTutorContent && (
+                              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <p className="text-sm">{stage.aiTutorContent}</p>
+                              </div>
+                            )}
+                          </div>
 
+                          {/* Case Study Section */}
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
                               <div className="flex items-center gap-2">
                                 <FileText className="w-4 h-4" />
-                                <span className="text-sm">Case Study</span>
+                                <span className="text-sm font-medium">Case Study</span>
                               </div>
                               {stage.caseStudyGenerated ? (
                                 <Badge variant="default">Generated</Badge>
@@ -379,11 +431,19 @@ export function SkillManagement() {
                                 </Button>
                               )}
                             </div>
+                            {stage.caseStudyGenerated && stage.caseStudyContent && (
+                              <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                                <p className="text-sm">{stage.caseStudyContent}</p>
+                              </div>
+                            )}
+                          </div>
 
+                          {/* Quiz Section */}
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
                               <div className="flex items-center gap-2">
                                 <HelpCircle className="w-4 h-4" />
-                                <span className="text-sm">Quiz</span>
+                                <span className="text-sm font-medium">Quiz</span>
                               </div>
                               {stage.quizGenerated ? (
                                 <Badge variant="default">Generated</Badge>
@@ -398,6 +458,11 @@ export function SkillManagement() {
                                 </Button>
                               )}
                             </div>
+                            {stage.quizGenerated && stage.quizContent && (
+                              <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                <p className="text-sm">{stage.quizContent}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
