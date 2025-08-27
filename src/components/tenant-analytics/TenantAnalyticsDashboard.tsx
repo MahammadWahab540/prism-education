@@ -61,82 +61,88 @@ export function TenantAnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedTenant, setSelectedTenant] = useState('all');
 
-  // Mock data for tenant analytics
-  const revenueData = [
-    { month: 'Jan', revenue: 12400, subscriptions: 24, churn: 2 },
-    { month: 'Feb', revenue: 15600, subscriptions: 31, churn: 1 },
-    { month: 'Mar', revenue: 18900, subscriptions: 38, churn: 3 },
-    { month: 'Apr', revenue: 22100, subscriptions: 44, churn: 2 },
-    { month: 'May', revenue: 25800, subscriptions: 52, churn: 4 },
-    { month: 'Jun', revenue: 28400, subscriptions: 57, churn: 2 }
+  // Mock data for student analytics
+  const learningProgressData = [
+    { month: 'Jan', completions: 124, enrollments: 245, watchTime: 1850 },
+    { month: 'Feb', completions: 156, enrollments: 312, watchTime: 2340 },
+    { month: 'Mar', completions: 189, enrollments: 378, watchTime: 2890 },
+    { month: 'Apr', completions: 221, enrollments: 442, watchTime: 3210 },
+    { month: 'May', completions: 258, enrollments: 516, watchTime: 3850 },
+    { month: 'Jun', completions: 284, enrollments: 568, watchTime: 4240 }
   ];
 
-  const tenantPerformanceData = [
+  const studentPerformanceData = [
     { 
-      name: 'TechCorp Inc.', 
-      users: 245, 
-      activeUsers: 189, 
+      name: 'Sarah Johnson', 
+      email: 'sarah.j@email.com',
+      coursesEnrolled: 8, 
+      coursesCompleted: 6, 
+      completionRate: 75, 
+      engagement: 92, 
+      totalWatchTime: 245,
+      streakDays: 15,
+      health: 'excellent',
+      level: 'Advanced'
+    },
+    { 
+      name: 'Michael Chen', 
+      email: 'michael.c@email.com',
+      coursesEnrolled: 12, 
+      coursesCompleted: 10, 
+      completionRate: 83, 
+      engagement: 88, 
+      totalWatchTime: 356,
+      streakDays: 22,
+      health: 'excellent',
+      level: 'Expert'
+    },
+    { 
+      name: 'Emily Rodriguez', 
+      email: 'emily.r@email.com',
+      coursesEnrolled: 6, 
+      coursesCompleted: 4, 
+      completionRate: 67, 
+      engagement: 78, 
+      totalWatchTime: 189,
+      streakDays: 8,
+      health: 'good',
+      level: 'Intermediate'
+    },
+    { 
+      name: 'David Kim', 
+      email: 'david.k@email.com',
+      coursesEnrolled: 9, 
+      coursesCompleted: 7, 
       completionRate: 78, 
       engagement: 85, 
-      revenue: 4800,
-      growth: 15,
+      totalWatchTime: 278,
+      streakDays: 12,
       health: 'excellent',
-      tier: 'Enterprise'
+      level: 'Advanced'
     },
     { 
-      name: 'EduLearn Academy', 
-      users: 456, 
-      activeUsers: 398, 
-      completionRate: 82, 
-      engagement: 91, 
-      revenue: 8200,
-      growth: 22,
-      health: 'excellent',
-      tier: 'Enterprise'
-    },
-    { 
-      name: 'StartupHub', 
-      users: 89, 
-      activeUsers: 67, 
-      completionRate: 65, 
-      engagement: 72, 
-      revenue: 1800,
-      growth: 8,
-      health: 'good',
-      tier: 'Professional'
-    },
-    { 
-      name: 'InnovateFlow', 
-      users: 167, 
-      activeUsers: 134, 
-      completionRate: 71, 
-      engagement: 78, 
-      revenue: 3200,
-      growth: 12,
-      health: 'good',
-      tier: 'Professional'
-    },
-    { 
-      name: 'Digital Solutions', 
-      users: 123, 
-      activeUsers: 89, 
-      completionRate: 58, 
-      engagement: 64, 
-      revenue: 2400,
-      growth: -3,
+      name: 'Lisa Thompson', 
+      email: 'lisa.t@email.com',
+      coursesEnrolled: 5, 
+      coursesCompleted: 2, 
+      completionRate: 40, 
+      engagement: 62, 
+      totalWatchTime: 124,
+      streakDays: 3,
       health: 'warning',
-      tier: 'Basic'
+      level: 'Beginner'
     },
     { 
-      name: 'Future Tech', 
-      users: 78, 
-      activeUsers: 45, 
-      completionRate: 42, 
-      engagement: 51, 
-      revenue: 1200,
-      growth: -8,
+      name: 'James Wilson', 
+      email: 'james.w@email.com',
+      coursesEnrolled: 7, 
+      coursesCompleted: 1, 
+      completionRate: 14, 
+      engagement: 35, 
+      totalWatchTime: 67,
+      streakDays: 0,
       health: 'critical',
-      tier: 'Basic'
+      level: 'Beginner'
     }
   ];
 
@@ -177,19 +183,19 @@ export function TenantAnalyticsDashboard() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-luxury">Tenant Analytics</h1>
-          <p className="text-muted-foreground mt-2">Monitor tenant performance, revenue, and engagement metrics</p>
+          <h1 className="text-3xl font-bold text-gradient-luxury">Student Analytics</h1>
+          <p className="text-muted-foreground mt-2">Monitor student performance, learning progress, and engagement metrics</p>
         </div>
         <div className="flex items-center gap-4">
           <Select value={selectedTenant} onValueChange={setSelectedTenant}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select tenant" />
+              <SelectValue placeholder="Select student" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Tenants</SelectItem>
-              {tenantPerformanceData.map((tenant) => (
-                <SelectItem key={tenant.name} value={tenant.name}>
-                  {tenant.name}
+              <SelectItem value="all">All Students</SelectItem>
+              {studentPerformanceData.map((student) => (
+                <SelectItem key={student.name} value={student.name}>
+                  {student.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -215,45 +221,45 @@ export function TenantAnalyticsDashboard() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <AnimatedKpiCard
-          label="Total Revenue"
-          value="$267K"
-          change="+18.5% from last month"
+          label="Total Students"
+          value="1,247"
+          change="+12.3% from last month"
           trend="up"
-          icon={DollarSign}
+          icon={Users}
           animationType="progress"
         />
         <AnimatedKpiCard
-          label="Active Tenants"
-          value="85"
-          change="+12% from last month"
+          label="Course Completions"
+          value="892"
+          change="+18% from last month"
           trend="up"
-          icon={Building2}
+          icon={Award}
           animationType="wave"
         />
         <AnimatedKpiCard
           label="Avg Engagement"
-          value="76%"
+          value="78%"
           change="+4.2% from last month"
           trend="up"
           icon={Activity}
           animationType="geometric"
         />
         <AnimatedKpiCard
-          label="Churn Rate"
-          value="2.1%"
-          change="-0.8% from last month"
-          trend="down"
-          icon={Target}
+          label="Active Learners"
+          value="1,089"
+          change="+8.5% from last month"
+          trend="up"
+          icon={TrendingUp}
           animationType="pulse"
         />
       </div>
 
       <Tabs defaultValue="performance" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
+          <TabsTrigger value="performance">Students</TabsTrigger>
+          <TabsTrigger value="revenue">Learning Progress</TabsTrigger>
           <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          <TabsTrigger value="health">Health Score</TabsTrigger>
+          <TabsTrigger value="health">Performance Score</TabsTrigger>
         </TabsList>
 
         <TabsContent value="performance" className="space-y-6">
@@ -272,39 +278,37 @@ export function TenantAnalyticsDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {tenantPerformanceData.map((tenant, index) => (
-                  <div key={tenant.name} className="group p-4 bg-background/50 rounded-lg border border-border/50 hover:border-primary/50 transition-all duration-200">
+                {studentPerformanceData.map((student, index) => (
+                  <div key={student.name} className="group p-4 bg-background/50 rounded-lg border border-border/50 hover:border-primary/50 transition-all duration-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
-                          <Building2 className="w-6 h-6 text-primary" />
+                          <Users className="w-6 h-6 text-primary" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                              {tenant.name}
+                              {student.name}
                             </p>
                             <Badge variant="outline" className="text-xs">
-                              {tenant.tier}
+                              {student.level}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                            <span>{tenant.users} total users</span>
-                            <span>{tenant.activeUsers} active</span>
-                            <span className={tenant.growth > 0 ? 'text-green-600' : 'text-red-600'}>
-                              {tenant.growth > 0 ? '+' : ''}{tenant.growth}% growth
-                            </span>
+                            <span>{student.email}</span>
+                            <span>{student.coursesCompleted}/{student.coursesEnrolled} courses</span>
+                            <span>{student.streakDays} day streak</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="text-sm font-medium">${tenant.revenue.toLocaleString()}/mo</p>
-                          <p className="text-xs text-muted-foreground">{tenant.completionRate}% completion</p>
+                          <p className="text-sm font-medium">{student.totalWatchTime}h watched</p>
+                          <p className="text-xs text-muted-foreground">{student.completionRate}% completion</p>
                         </div>
-                        <Badge className={`${getHealthColor(tenant.health)} flex items-center gap-1`}>
-                          {getHealthIcon(tenant.health)}
-                          {tenant.health}
+                        <Badge className={`${getHealthColor(student.health)} flex items-center gap-1`}>
+                          {getHealthIcon(student.health)}
+                          {student.health}
                         </Badge>
                       </div>
                     </div>
@@ -320,14 +324,14 @@ export function TenantAnalyticsDashboard() {
             <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-primary" />
-                  Revenue Trends
+                  <Award className="w-5 h-5 text-primary" />
+                  Learning Progress Trends
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={revenueData}>
+                    <AreaChart data={learningProgressData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis 
                         dataKey="month" 
@@ -343,7 +347,7 @@ export function TenantAnalyticsDashboard() {
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Area 
                         type="monotone" 
-                        dataKey="revenue" 
+                        dataKey="completions" 
                         stroke="hsl(var(--primary))" 
                         fill="hsl(var(--primary))" 
                         fillOpacity={0.2}
@@ -359,7 +363,7 @@ export function TenantAnalyticsDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5 text-secondary" />
-                  Subscription Tiers
+                  Student Levels Distribution
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -367,19 +371,27 @@ export function TenantAnalyticsDashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={tierDistributionData}
+                        data={[
+                          { level: 'Beginner', count: 2 },
+                          { level: 'Intermediate', count: 1 },
+                          { level: 'Advanced', count: 2 },
+                          { level: 'Expert', count: 1 }
+                        ]}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
                         outerRadius={100}
                         fill="hsl(var(--primary))"
                         dataKey="count"
-                        label={({ tier, percent }) => `${tier} ${(percent * 100).toFixed(0)}%`}
+                        label={({ level, percent }) => `${level} ${(percent * 100).toFixed(0)}%`}
                       >
-                        {tierDistributionData.map((entry, index) => (
+                        {[{ level: 'Beginner', count: 2 },
+                          { level: 'Intermediate', count: 1 },
+                          { level: 'Advanced', count: 2 },
+                          { level: 'Expert', count: 1 }].map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill={`hsl(var(--primary) / ${0.8 - (index * 0.2)})`} 
+                            fill={`hsl(var(--primary) / ${0.8 - (index * 0.15)})`} 
                           />
                         ))}
                       </Pie>
@@ -449,26 +461,26 @@ export function TenantAnalyticsDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card className="glass-card">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">12</div>
-                <div className="text-sm text-muted-foreground">Excellent Health</div>
+                <div className="text-2xl font-bold text-green-600">3</div>
+                <div className="text-sm text-muted-foreground">Excellent Performance</div>
               </CardContent>
             </Card>
             <Card className="glass-card">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">28</div>
-                <div className="text-sm text-muted-foreground">Good Health</div>
+                <div className="text-2xl font-bold text-blue-600">2</div>
+                <div className="text-sm text-muted-foreground">Good Performance</div>
               </CardContent>
             </Card>
             <Card className="glass-card">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">3</div>
-                <div className="text-sm text-muted-foreground">Warning</div>
+                <div className="text-2xl font-bold text-yellow-600">1</div>
+                <div className="text-sm text-muted-foreground">Needs Attention</div>
               </CardContent>
             </Card>
             <Card className="glass-card">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">2</div>
-                <div className="text-sm text-muted-foreground">Critical</div>
+                <div className="text-2xl font-bold text-red-600">1</div>
+                <div className="text-sm text-muted-foreground">At Risk</div>
               </CardContent>
             </Card>
           </div>
@@ -477,38 +489,38 @@ export function TenantAnalyticsDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Star className="w-5 h-5 text-primary" />
-                Tenant Health Scores
+                Student Performance Scores
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {tenantPerformanceData
+                {studentPerformanceData
                   .sort((a, b) => {
                     const healthOrder = { excellent: 4, good: 3, warning: 2, critical: 1 };
                     return healthOrder[b.health as keyof typeof healthOrder] - healthOrder[a.health as keyof typeof healthOrder];
                   })
-                  .map((tenant) => (
-                    <div key={tenant.name} className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border/50">
+                  .map((student) => (
+                    <div key={student.name} className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border/50">
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getHealthColor(tenant.health)}`}>
-                          {getHealthIcon(tenant.health)}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getHealthColor(student.health)}`}>
+                          {getHealthIcon(student.health)}
                         </div>
                         <div>
-                          <p className="font-semibold">{tenant.name}</p>
+                          <p className="font-semibold">{student.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {tenant.engagement}% engagement • {tenant.completionRate}% completion
+                            {student.engagement}% engagement • {student.completionRate}% completion
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="text-sm font-medium">{tenant.activeUsers}/{tenant.users} active</p>
+                          <p className="text-sm font-medium">{student.coursesCompleted}/{student.coursesEnrolled} courses</p>
                           <p className="text-xs text-muted-foreground">
-                            {tenant.growth > 0 ? '+' : ''}{tenant.growth}% growth
+                            {student.streakDays} day streak
                           </p>
                         </div>
-                        <Badge className={getHealthColor(tenant.health)}>
-                          {tenant.health}
+                        <Badge className={getHealthColor(student.health)}>
+                          {student.health}
                         </Badge>
                       </div>
                     </div>
