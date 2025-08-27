@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StageCard } from './StageCard';
 import { useUnlockLogic } from '@/hooks/useUnlockLogic';
 
@@ -17,6 +18,7 @@ interface RoadmapContainerProps {
 }
 
 export function RoadmapContainer({ skillId, stages, onStageSelect }: RoadmapContainerProps) {
+  const navigate = useNavigate();
   const {
     progress,
     updateVideoProgress,
@@ -27,13 +29,9 @@ export function RoadmapContainer({ skillId, stages, onStageSelect }: RoadmapCont
   } = useUnlockLogic(skillId);
 
   const handleStartStage = (stageId: string) => {
+    // Navigate to the learning page
+    navigate(`/learn/${skillId}/${stageId}`);
     onStageSelect(stageId);
-    // Here you could navigate to the learning page
-    // For demo purposes, let's simulate some progress
-    if (Math.random() > 0.5) {
-      setTimeout(() => updateVideoProgress(stageId, 35), 1000);
-      setTimeout(() => completeQuiz(stageId), 2000);
-    }
   };
 
   return (
