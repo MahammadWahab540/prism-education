@@ -16,7 +16,7 @@ import { QuizSection } from '@/components/learning/QuizSection';
 interface TabItem {
   id: string;
   title: string;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: React.ComponentType<{ className?: string; size?: string | number }>;
   component: React.ComponentType<any>;
 }
 
