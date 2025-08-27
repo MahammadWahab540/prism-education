@@ -69,6 +69,7 @@ export function SkillManagement() {
   ]);
 
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [activeTab, setActiveTab] = useState("skills");
   const [isCreateSkillOpen, setIsCreateSkillOpen] = useState(false);
   const [isCreateStageOpen, setIsCreateStageOpen] = useState(false);
   const [newSkill, setNewSkill] = useState({
@@ -154,6 +155,11 @@ export function SkillManagement() {
     return 'External Link';
   };
 
+  const handleManageStages = (skill: Skill) => {
+    setSelectedSkill(skill);
+    setActiveTab("stages");
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -214,7 +220,7 @@ export function SkillManagement() {
         </Dialog>
       </div>
 
-      <Tabs defaultValue="skills" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="skills">All Skills</TabsTrigger>
           <TabsTrigger value="stages">Stage Builder</TabsTrigger>
@@ -255,7 +261,7 @@ export function SkillManagement() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => setSelectedSkill(skill)}
+                    onClick={() => handleManageStages(skill)}
                     className="w-full"
                   >
                     <Edit className="w-4 h-4 mr-2" />
