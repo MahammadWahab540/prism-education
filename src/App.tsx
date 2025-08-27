@@ -12,6 +12,7 @@ import CourseManagement from "@/pages/CourseManagement";
 import Tenants from "@/pages/Tenants";
 import Analytics from "@/pages/Analytics";
 import TenantAnalytics from "@/pages/TenantAnalytics";
+import TenantReports from "@/pages/TenantReports";
 import SystemUsers from "@/pages/SystemUsers";
 import Students from "@/pages/Students";
 import NotFound from "@/pages/NotFound";
@@ -33,6 +34,7 @@ function App() {
               <Route path="/tenants" element={<Tenants />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/tenant-analytics" element={<TenantAnalytics />} />
+              <Route path="/tenant-reports" element={<TenantReports />} />
               <Route path="/system-users" element={<SystemUsers />} />
               <Route path="/students" element={<Students />} />
               <Route path="*" element={<NotFound />} />
