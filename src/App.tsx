@@ -16,6 +16,7 @@ import Students from "@/pages/Students";
 import NotFound from "@/pages/NotFound";
 
 function App() {
+  // Force rebuild to pick up new routes
   return (
     <AuthProvider>
       <TooltipProvider>
