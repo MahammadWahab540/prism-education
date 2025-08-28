@@ -1,6 +1,8 @@
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { LearningPathProvider } from '@/contexts/LearningPathContext';
+import { StudentRouteGuard } from '@/components/guards/StudentRouteGuard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -26,31 +28,35 @@ function AppContent() {
   
   return (
     <NotificationProvider userId={user?.id || 'guest'}>
-      <TooltipProvider>
-        <Router>
-          <div className="min-h-screen bg-background font-sans antialiased">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/my-skills" element={<MySkills />} />
-              <Route path="/roadmap/:skillId" element={<Roadmap />} />
-              <Route path="/learn/:skillId/:stageId" element={<LearningPage />} />
-              <Route path="/course-management" element={<CourseManagement />} />
-              <Route path="/tenants" element={<Tenants />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/tenant-analytics" element={<TenantAnalytics />} />
-              <Route path="/tenant-reports" element={<TenantReports />} />
-              <Route path="/system-users" element={<SystemUsers />} />
-              <Route path="/students" element={<Students />} />
-              <Route path="/help-support" element={<HelpSupport />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/learning-path" element={<LearningPath />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
-          <Toaster />
-        </Router>
-      </TooltipProvider>
+      <LearningPathProvider>
+        <TooltipProvider>
+          <Router>
+            <div className="min-h-screen bg-background font-sans antialiased">
+              <StudentRouteGuard>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/my-skills" element={<MySkills />} />
+                  <Route path="/roadmap/:skillId" element={<Roadmap />} />
+                  <Route path="/learn/:skillId/:stageId" element={<LearningPage />} />
+                  <Route path="/course-management" element={<CourseManagement />} />
+                  <Route path="/tenants" element={<Tenants />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/tenant-analytics" element={<TenantAnalytics />} />
+                  <Route path="/tenant-reports" element={<TenantReports />} />
+                  <Route path="/system-users" element={<SystemUsers />} />
+                  <Route path="/students" element={<Students />} />
+                  <Route path="/help-support" element={<HelpSupport />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/learning-path" element={<LearningPath />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </StudentRouteGuard>
+            </div>
+            <Toaster />
+          </Router>
+        </TooltipProvider>
+      </LearningPathProvider>
     </NotificationProvider>
   );
 }

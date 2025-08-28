@@ -6,6 +6,7 @@ import { PlatformOwnerDashboard } from '@/components/dashboard/PlatformOwnerDash
 import { TenantAdminDashboard } from '@/components/dashboard/TenantAdminDashboard';
 import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -47,6 +48,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
+      <OnboardingBanner />
       {renderDashboard()}
     </DashboardLayout>
   );

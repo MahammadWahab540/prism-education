@@ -9,12 +9,21 @@ import { CareerGoalSelector } from '@/components/learning-path/CareerGoalSelecto
 import { SkillsSelector } from '@/components/learning-path/SkillsSelector';
 import { useToast } from '@/hooks/use-toast';
 import { Target, BookOpen, Trophy } from 'lucide-react';
+import { useLearningPath } from '@/contexts/LearningPathContext';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function LearningPath() {
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
   const [selectedSkills, setSelectedSkills] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState<'goal' | 'skills' | 'confirmation'>('goal');
   const { toast } = useToast();
+  const { updateLearningPath } = useLearningPath();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Get the reason for showing learning path (from URL params)
+  const reason = searchParams.get('reason');
+  const redirectPath = searchParams.get('redirect');
 
   const handleGoalSelect = (goal: any) => {
     setSelectedGoal(goal);
@@ -30,16 +39,20 @@ export default function LearningPath() {
   };
 
   const handleSaveLearningPath = () => {
-    // Mock save - will be replaced with actual API call
+    // Update learning path context (mock backend integration)
+    updateLearningPath(selectedGoal?.id, selectedSkills);
+    
     toast({
       title: "Learning path saved!",  
       description: `Your career goal and ${selectedSkills.length} skills have been saved.`,
     });
     
-    // Reset to allow selecting a new path
-    setCurrentStep('goal');
-    setSelectedGoal(null);
-    setSelectedSkills([]);
+    // Redirect back to original page or dashboard
+    if (redirectPath) {
+      navigate(redirectPath);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleBackToGoals = () => {
@@ -78,7 +91,10 @@ export default function LearningPath() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Choose Your Learning Path</h1>
               <p className="text-muted-foreground">
-                Define your career goals and select the skills you want to master
+                {reason === 'no-active-skills' 
+                  ? "Complete your learning path setup to access all features"
+                  : "Define your career goals and select the skills you want to master"
+                }
               </p>
             </div>
           </motion.div>

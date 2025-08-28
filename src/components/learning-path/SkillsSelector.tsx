@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RaiseTicketModal } from './RaiseTicketModal';
 import { Search, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import { mockSkills, mockGoalSkillMap } from '@/lib/mockData';
+import { useLearningPath } from '@/contexts/LearningPathContext';
 
 interface SkillsSelectorProps {
   careerGoal: any;
@@ -19,6 +20,7 @@ export function SkillsSelector({ careerGoal, onSkillsSelect, selectedSkills }: S
   const [searchTerm, setSearchTerm] = useState('');
   const [availableSkills, setAvailableSkills] = useState<any[]>([]);
   const [showTicketModal, setShowTicketModal] = useState(false);
+  const { markOnboardingComplete } = useLearningPath();
 
   useEffect(() => {
     // Mock API call to get skills for the career goal
@@ -57,7 +59,8 @@ export function SkillsSelector({ careerGoal, onSkillsSelect, selectedSkills }: S
 
   const handleTicketRaised = () => {
     setShowTicketModal(false);
-    // Allow continuation with 0 skills after ticket is raised
+    // Allow continuation with 0 skills after ticket is raised - mark as complete
+    markOnboardingComplete();
     onSkillsSelect([]);
   };
 
