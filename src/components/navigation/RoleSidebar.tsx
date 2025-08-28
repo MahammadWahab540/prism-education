@@ -83,6 +83,7 @@ const getNavigationItems = (role: string) => {
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'Course Management', url: '/course-management', icon: BookOpen },
         { title: 'Tenants', url: '/tenants', icon: Building2 },
+        { title: 'Students', url: '/students', icon: GraduationCap },
         { title: 'Analytics', url: '/analytics', icon: BarChart3 },
         { title: 'System Users', url: '/system-users', icon: Users },
         { title: 'Reports', url: '/system-reports', icon: FileText },

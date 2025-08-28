@@ -847,12 +847,25 @@ export function AnalyticsDashboard() {
                             </span>
                           </p>
                         </div>
-                        <Badge 
-                          variant="secondary" 
-                          className="bg-primary/10 text-primary border-primary/20"
-                        >
-                          {tenant.value} total users
-                        </Badge>
+                        <div className="flex items-center gap-3">
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-primary/10 text-primary border-primary/20"
+                          >
+                            {tenant.value} total users
+                          </Badge>
+                          {isPlatformOwner && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => window.location.href = `/students?tenant=${encodeURIComponent(tenant.name)}`}
+                              className="bg-gradient-to-r from-primary/10 to-accent-luxury/10 hover:from-primary/20 hover:to-accent-luxury/20"
+                            >
+                              <Users className="w-4 h-4 mr-2" />
+                              View Students
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
