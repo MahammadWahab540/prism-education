@@ -30,10 +30,13 @@ import {
   AlertTriangle,
   Upload,
   FileText,
-  Briefcase
+  Briefcase,
+  Building2,
+  Shield
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Student {
   id: string;
@@ -52,9 +55,32 @@ interface Student {
   totalWatchTime: number;
   quizzesCompleted: number;
   averageScore: number;
+  tenantId: string;
+}
+
+interface Tenant {
+  id: string;
+  name: string;
+  domain: string;
+  studentCount: number;
 }
 
 export function StudentManagement() {
+  const { user } = useAuth();
+  const isPlatformOwner = user?.role === 'platform_owner';
+  
+  // Mock tenants data for platform owner
+  const [tenants] = useState<Tenant[]>([
+    { id: 'tenant-1', name: 'University of Technology', domain: 'tech.edu', studentCount: 5 },
+    { id: 'tenant-2', name: 'Business School International', domain: 'bschool.edu', studentCount: 8 },
+    { id: 'tenant-3', name: 'Medical University', domain: 'meduni.edu', studentCount: 12 },
+  ]);
+  
+  const [selectedTenant, setSelectedTenant] = useState<string>(
+    isPlatformOwner ? '' : user?.tenantId || 'tenant-1'
+  );
+  const [tenantSearchTerm, setTenantSearchTerm] = useState('');
+  
   const [students, setStudents] = useState<Student[]>([
     {
       id: '1',
@@ -72,7 +98,8 @@ export function StudentManagement() {
       currentSkill: 'Machine Learning Basics',
       totalWatchTime: 1250,
       quizzesCompleted: 12,
-      averageScore: 85
+      averageScore: 85,
+      tenantId: 'tenant-1'
     },
     {
       id: '2',
@@ -90,7 +117,8 @@ export function StudentManagement() {
       currentSkill: 'Data Analysis',
       totalWatchTime: 680,
       quizzesCompleted: 6,
-      averageScore: 72
+      averageScore: 72,
+      tenantId: 'tenant-1'
     },
     {
       id: '3',
@@ -108,7 +136,8 @@ export function StudentManagement() {
       currentSkill: 'Leadership Skills',
       totalWatchTime: 2100,
       quizzesCompleted: 18,
-      averageScore: 92
+      averageScore: 92,
+      tenantId: 'tenant-2'
     },
     {
       id: '4',
@@ -126,7 +155,8 @@ export function StudentManagement() {
       currentSkill: 'Python Programming',
       totalWatchTime: 120,
       quizzesCompleted: 1,
-      averageScore: 65
+      averageScore: 65,
+      tenantId: 'tenant-2'
     },
     {
       id: '5',
@@ -144,7 +174,8 @@ export function StudentManagement() {
       currentSkill: 'Financial Analytics',
       totalWatchTime: 940,
       quizzesCompleted: 9,
-      averageScore: 88
+      averageScore: 88,
+      tenantId: 'tenant-3'
     }
   ]);
 
@@ -175,7 +206,8 @@ export function StudentManagement() {
       status: 'active',
       totalWatchTime: 0,
       quizzesCompleted: 0,
-      averageScore: 0
+      averageScore: 0,
+      tenantId: selectedTenant
     };
     setStudents([...students, student]);
     setIsAddStudentOpen(false);
@@ -213,7 +245,8 @@ export function StudentManagement() {
           status: 'active' as const,
           totalWatchTime: 0,
           quizzesCompleted: 0,
-          averageScore: 0
+          averageScore: 0,
+          tenantId: selectedTenant
         };
       });
       
@@ -256,7 +289,12 @@ export function StudentManagement() {
     return `${hours}h ${mins}m`;
   };
 
-  const filteredStudents = students.filter(student => {
+  // Filter students by tenant first (for platform owners)
+  const tenantFilteredStudents = isPlatformOwner 
+    ? students.filter(student => selectedTenant ? student.tenantId === selectedTenant : false)
+    : students.filter(student => student.tenantId === user?.tenantId);
+
+  const filteredStudents = tenantFilteredStudents.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.careerChoice?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -266,97 +304,184 @@ export function StudentManagement() {
     return matchesSearch && matchesGraduationYear && matchesCareerChoice && matchesStatus;
   });
 
-  const totalStudents = students.length;
-  const activeStudents = students.filter(s => s.status === 'active').length;
-  const avgProgress = Math.round(students.reduce((sum, s) => sum + s.overallProgress, 0) / students.length);
-  const totalCompletions = students.reduce((sum, s) => sum + s.completedSkills, 0);
+  const totalStudents = tenantFilteredStudents.length;
+  const activeStudents = tenantFilteredStudents.filter(s => s.status === 'active').length;
+  const avgProgress = totalStudents > 0 ? Math.round(tenantFilteredStudents.reduce((sum, s) => sum + s.overallProgress, 0) / totalStudents) : 0;
+  const totalCompletions = tenantFilteredStudents.reduce((sum, s) => sum + s.completedSkills, 0);
 
-  const graduationYears = [...new Set(students.map(s => s.graduationYear))].sort((a, b) => b - a);
-  const careerChoices = [...new Set(students.map(s => s.careerChoice).filter(Boolean))] as string[];
+  const graduationYears = [...new Set(tenantFilteredStudents.map(s => s.graduationYear))].sort((a, b) => b - a);
+  const careerChoices = [...new Set(tenantFilteredStudents.map(s => s.careerChoice).filter(Boolean))] as string[];
+  
+  const selectedTenantData = tenants.find(t => t.id === selectedTenant);
+  const filteredTenants = tenants.filter(tenant => 
+    tenant.name.toLowerCase().includes(tenantSearchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-luxury">Student Management</h1>
-          <p className="text-muted-foreground mt-2">Manage learners and track their progress</p>
+          <h1 className="text-3xl font-bold text-gradient-luxury">
+            {isPlatformOwner ? 'Students & Performance' : 'Student Management'}
+            {selectedTenantData && isPlatformOwner && (
+              <span className="text-xl font-normal text-muted-foreground ml-2">
+                — {selectedTenantData.name}
+              </span>
+            )}
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {isPlatformOwner ? 'Monitor student performance across tenants' : 'Manage learners and track their progress'}
+          </p>
         </div>
-                <div className="flex gap-3">
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export Data
-          </Button>
-          <Dialog open={isUploadCsvOpen} onOpenChange={setIsUploadCsvOpen}>
-            <DialogTrigger asChild>
+        <div className="flex gap-3">
+          {!isPlatformOwner && (
+            <>
               <Button variant="outline">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload CSV
+                <Download className="w-4 h-4 mr-2" />
+                Export Data
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Upload Student CSV</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  CSV format: Name, Email, Graduation Year, Batch, Career Choice
-                </p>
-                <Input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                />
-                <Button onClick={handleCsvUpload} disabled={!csvFile} className="w-full">
-                  Upload Students
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Student</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input
-                  placeholder="Student Name"
-                  value={newStudent.name}
-                  onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
-                />
-                <Input
-                  placeholder="Email Address"
-                  type="email"
-                  value={newStudent.email}
-                  onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
-                />
-                <Input
-                  placeholder="Graduation Year"
-                  type="number"
-                  value={newStudent.graduationYear}
-                  onChange={(e) => setNewStudent({ ...newStudent, graduationYear: parseInt(e.target.value) || new Date().getFullYear() })}
-                />
-                <Input
-                  placeholder="Batch (e.g., CS-2025-A)"
-                  value={newStudent.batch}
-                  onChange={(e) => setNewStudent({ ...newStudent, batch: e.target.value })}
-                />
-                <Button onClick={handleAddStudent} className="w-full">
-                  Add Student
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              <Dialog open={isUploadCsvOpen} onOpenChange={setIsUploadCsvOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload CSV
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upload Student CSV</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      CSV format: Name, Email, Graduation Year, Batch, Career Choice
+                    </p>
+                    <Input
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                    />
+                    <Button onClick={handleCsvUpload} disabled={!csvFile} className="w-full">
+                      Upload Students
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add Student
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add New Student</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="Student Name"
+                      value={newStudent.name}
+                      onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Email Address"
+                      type="email"
+                      value={newStudent.email}
+                      onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Graduation Year"
+                      type="number"
+                      value={newStudent.graduationYear}
+                      onChange={(e) => setNewStudent({ ...newStudent, graduationYear: parseInt(e.target.value) || new Date().getFullYear() })}
+                    />
+                    <Input
+                      placeholder="Batch (e.g., CS-2025-A)"
+                      value={newStudent.batch}
+                      onChange={(e) => setNewStudent({ ...newStudent, batch: e.target.value })}
+                    />
+                    <Button onClick={handleAddStudent} className="w-full">
+                      Add Student
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+          {isPlatformOwner && (
+            <Button variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export Data
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Platform Owner Tenant Switcher */}
+      {isPlatformOwner && (
+        <Card className="glass-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                <span className="font-medium">Select Tenant:</span>
+              </div>
+              <div className="flex-1 max-w-sm">
+                <Select value={selectedTenant} onValueChange={setSelectedTenant}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a tenant to view students" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="p-2">
+                      <Input
+                        placeholder="Search tenants..."
+                        value={tenantSearchTerm}
+                        onChange={(e) => setTenantSearchTerm(e.target.value)}
+                        className="mb-2"
+                      />
+                    </div>
+                    {filteredTenants.map(tenant => (
+                      <SelectItem key={tenant.id} value={tenant.id}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{tenant.name}</span>
+                          <Badge variant="secondary" className="ml-2">
+                            {tenant.studentCount} students
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {isPlatformOwner && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Shield className="w-4 h-4" />
+                  <span>Read-only access</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty state for platform owner without tenant selection */}
+      {isPlatformOwner && !selectedTenant && (
+        <Card className="glass-card">
+          <CardContent className="p-12 text-center">
+            <Building2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Select a Tenant</h3>
+            <p className="text-muted-foreground">
+              Choose a tenant from the dropdown above to view their student performance data.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Show stats and content only when tenant is selected (for platform owner) or always (for tenant admin) */}
+      {(!isPlatformOwner || selectedTenant) && (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="glass-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -734,6 +859,8 @@ export function StudentManagement() {
           </div>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
