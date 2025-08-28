@@ -101,11 +101,6 @@ const getNavigationItems = (role: string) => {
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'My Skills', url: '/my-skills', icon: BookOpen },
-        { title: 'Assignments', url: '/assignments', icon: ClipboardList },
-        { title: 'Grades', url: '/grades', icon: Award },
-        { title: 'Calendar', url: '/student-calendar', icon: Calendar },
-        { title: 'Messages', url: '/messages', icon: MessageSquare },
-        { title: 'Library', url: '/library', icon: School },
         { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
       ];
     default:
