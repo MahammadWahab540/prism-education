@@ -17,6 +17,7 @@ import Students from '@/pages/Students';
 import TenantAnalytics from '@/pages/TenantAnalytics';
 import TenantReports from '@/pages/TenantReports';
 import HelpSupport from '@/pages/HelpSupport';
+import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
 
 function AppContent() {
@@ -41,6 +42,7 @@ function AppContent() {
               <Route path="/system-users" element={<SystemUsers />} />
               <Route path="/students" element={<Students />} />
               <Route path="/help-support" element={<HelpSupport />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
