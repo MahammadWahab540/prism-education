@@ -92,10 +92,8 @@ const getNavigationItems = (role: string) => {
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'Students', url: '/students', icon: GraduationCap },
-        { title: 'Instructors', url: '/instructors', icon: UserCog },
         { title: 'Analytics', url: '/tenant-analytics', icon: PieChart },
         { title: 'Reports', url: '/tenant-reports', icon: FileText },
-        { title: 'Calendar', url: '/calendar', icon: Calendar },
       ];
     case 'student':
       return [
