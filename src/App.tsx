@@ -1,26 +1,29 @@
 
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from '@/contexts/AuthContext';
-import Index from "@/pages/Index";
-import Dashboard from "@/pages/Dashboard";
-import MySkills from "@/pages/MySkills";
-import Roadmap from "@/pages/Roadmap";
-import LearningPage from "@/pages/LearningPage";
-import CourseManagement from "@/pages/CourseManagement";
-import Tenants from "@/pages/Tenants";
-import Analytics from "@/pages/Analytics";
-import TenantAnalytics from "@/pages/TenantAnalytics";
-import TenantReports from "@/pages/TenantReports";
-import SystemUsers from "@/pages/SystemUsers";
-import Students from "@/pages/Students";
-import NotFound from "@/pages/NotFound";
+import Index from '@/pages/Index';
+import Dashboard from '@/pages/Dashboard';
+import MySkills from '@/pages/MySkills';
+import Roadmap from '@/pages/Roadmap';
+import LearningPage from '@/pages/LearningPage';
+import CourseManagement from '@/pages/CourseManagement';
+import Tenants from '@/pages/Tenants';
+import Analytics from '@/pages/Analytics';
+import SystemUsers from '@/pages/SystemUsers';
+import Students from '@/pages/Students';
+import TenantAnalytics from '@/pages/TenantAnalytics';
+import TenantReports from '@/pages/TenantReports';
+import HelpSupport from '@/pages/HelpSupport';
+import NotFound from '@/pages/NotFound';
 
-function App() {
-  // Force rebuild to pick up new routes
+function AppContent() {
+  const { user } = useAuth();
+  
   return (
-    <AuthProvider>
+    <NotificationProvider userId={user?.id || 'guest'}>
       <TooltipProvider>
         <Router>
           <div className="min-h-screen bg-background font-sans antialiased">
@@ -37,12 +40,21 @@ function App() {
               <Route path="/tenant-reports" element={<TenantReports />} />
               <Route path="/system-users" element={<SystemUsers />} />
               <Route path="/students" element={<Students />} />
+              <Route path="/help-support" element={<HelpSupport />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
           <Toaster />
         </Router>
       </TooltipProvider>
+    </NotificationProvider>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }
