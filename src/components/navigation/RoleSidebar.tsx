@@ -37,6 +37,7 @@ import {
   ClipboardList,
   PieChart,
   UserCircle,
+  Target,
 } from 'lucide-react';
 
 const sidebarVariants = {
@@ -102,6 +103,7 @@ const getNavigationItems = (role: string) => {
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'My Skills', url: '/my-skills', icon: BookOpen },
+        { title: 'Learning Path', url: '/learning-path', icon: Target },
         { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
       ];
     default:
