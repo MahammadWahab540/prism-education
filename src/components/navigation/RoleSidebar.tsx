@@ -91,7 +91,6 @@ const getNavigationItems = (role: string) => {
     case 'tenant_admin':
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'Courses', url: '/courses', icon: BookOpen },
         { title: 'Students', url: '/students', icon: GraduationCap },
         { title: 'Instructors', url: '/instructors', icon: UserCog },
         { title: 'Analytics', url: '/tenant-analytics', icon: PieChart },
