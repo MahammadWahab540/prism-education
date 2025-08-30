@@ -19,6 +19,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { RightProfilePanel } from './RightProfilePanel';
+import { useUpcomingDeadlines } from '@/hooks/useUpcomingDeadlines';
 
 export function StudentDashboard() {
   const navigate = useNavigate();
@@ -92,11 +93,7 @@ export function StudentDashboard() {
     { title: 'Quick Learner', date: '2 weeks ago', icon: TrendingUp }
   ];
 
-  const upcomingDeadlines = [
-    { title: 'React Project Submission', course: 'React Development', dueDate: 'Tomorrow', urgent: true },
-    { title: 'Design Portfolio Review', course: 'UI/UX Fundamentals', dueDate: 'In 3 days', urgent: false },
-    { title: 'Marketing Campaign Analysis', course: 'Digital Marketing', dueDate: 'Next week', urgent: false }
-  ];
+  const { deadlines, hasDeadlines } = useUpcomingDeadlines();
 
   const handleResumeLearning = () => {
     // Navigate to the most recent course or my skills page
@@ -235,24 +232,26 @@ export function StudentDashboard() {
               </div>
             </Card>
 
-            {/* Upcoming Deadlines */}
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Calendar className="w-5 h-5 mr-2 text-accent-warning" />
-                Upcoming Deadlines
-              </h3>
-              <div className="space-y-3">
-                {upcomingDeadlines.map((deadline, index) => (
-                  <div key={index} className={`p-3 rounded-lg ${deadline.urgent ? 'bg-accent-warning/10 border border-accent-warning/20' : 'bg-white/30'} backdrop-blur-sm`}>
-                    <p className="text-sm font-medium">{deadline.title}</p>
-                    <p className="text-xs text-muted-foreground">{deadline.course}</p>
-                    <p className={`text-xs mt-1 ${deadline.urgent ? 'text-accent-warning font-medium' : 'text-muted-foreground'}`}>
-                      Due {deadline.dueDate}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            {/* Upcoming Deadlines - Show only when user has enrolled skills */}
+            {hasDeadlines && (
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Calendar className="w-5 h-5 mr-2 text-accent-warning" />
+                  Upcoming Deadlines
+                </h3>
+                <div className="space-y-3">
+                  {deadlines.map((deadline) => (
+                    <div key={deadline.id} className={`p-3 rounded-lg ${deadline.urgent ? 'bg-accent-warning/10 border border-accent-warning/20' : 'bg-white/30'} backdrop-blur-sm`}>
+                      <p className="text-sm font-medium">{deadline.title}</p>
+                      <p className="text-xs text-muted-foreground">{deadline.skillName} • {deadline.estimatedHours}h estimated</p>
+                      <p className={`text-xs mt-1 ${deadline.urgent ? 'text-accent-warning font-medium' : 'text-muted-foreground'}`}>
+                        Due {deadline.dueDate}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
           </div>
         </div>
       </div>
