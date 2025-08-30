@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -72,6 +73,7 @@ export function TenantAnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedTenant, setSelectedTenant] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('performance');
   const [showStudentDialog, setShowStudentDialog] = useState(false);
 
   // Mock data for student analytics

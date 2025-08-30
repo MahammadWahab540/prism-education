@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, Youtube, MessageCircle, FileText, Lightbulb, CheckCircle } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
 import { useUnlockLogic } from '@/hooks/useUnlockLogic';
 import { VideoSection } from '@/components/learning/VideoSection';
 import { AITutorSection } from '@/components/learning/AITutorSection';
@@ -127,82 +127,57 @@ const LearningPage = () => {
           </p>
         </div>
 
-        {/* Animated Tab Navigation */}
-        <div className="flex justify-center">
-          <div className={cn(
-            "flex items-center gap-1 p-2 relative",
-            "bg-background",
-            "border rounded-xl",
-            "transition-all duration-200",
-            "shadow-sm"
-          )}>
-            <AnimatePresence>
-              {activeNotification && (
-                <motion.div
-                  variants={notificationVariants as any}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{ duration: 0.3 }}
-                  className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-50"
-                >
-                  <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs">
-                    {tabItems.find(item => item.id === activeNotification)?.title} opened!
-                  </div>
-                  <motion.div
-                    variants={lineVariants as any}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    className="absolute -bottom-1 left-1/2 w-full h-[2px] bg-primary origin-left"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="flex items-center gap-1">
-              {tabItems.map((tab) => (
-                <motion.button
-                  key={tab.id}
-                  variants={buttonVariants as any}
-                  initial={false}
-                  animate="animate"
-                  custom={activeTab === tab.id}
-                  onClick={() => handleTabClick(tab.id)}
-                  transition={transition as any}
-                  className={cn(
-                    "relative flex items-center rounded-lg px-3 py-2",
-                    "text-sm font-medium transition-colors duration-300",
-                    activeTab === tab.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <tab.icon
-                    size={16}
-                    className={cn(
-                      activeTab === tab.id && "text-primary-foreground"
-                    )}
-                  />
-                  <AnimatePresence initial={false}>
-                    {activeTab === tab.id && (
-                      <motion.span
-                        variants={spanVariants as any}
-                        initial="initial"
-                        animate="animate"
-                        exit="exit"
-                        transition={transition as any}
-                        className="overflow-hidden whitespace-nowrap"
-                      >
-                        {tab.title}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* Navigation */}
+        <DropdownNavigation 
+          navItems={[
+            {
+              id: 1,
+              label: "Learning",
+              subMenus: [
+                {
+                  title: "Content",
+                  items: [
+                    {
+                      label: "Lesson Video",
+                      description: "Watch the main lesson content",
+                      icon: Youtube,
+                      onClick: () => setActiveTab("video")
+                    },
+                    {
+                      label: "AI Summary", 
+                      description: "Get AI-generated lesson summary",
+                      icon: FileText,
+                      onClick: () => setActiveTab("summary")
+                    }
+                  ]
+                },
+                {
+                  title: "Interactive",
+                  items: [
+                    {
+                      label: "AI Tutor",
+                      description: "Chat with AI for help and questions",
+                      icon: MessageCircle,
+                      onClick: () => setActiveTab("tutor")
+                    },
+                    {
+                      label: "Case Study",
+                      description: "Explore real-world applications",
+                      icon: Lightbulb,
+                      onClick: () => setActiveTab("case-study")
+                    },
+                    {
+                      label: "Dynamic Quiz",
+                      description: "Test your understanding",
+                      icon: CheckCircle,
+                      onClick: () => setActiveTab("quiz")
+                    }
+                  ]
+                }
+              ]
+            }
+          ]}
+        />
 
         {/* Tab Content */}
         <motion.div

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
@@ -187,6 +188,7 @@ export function StudentManagement() {
   const [careerChoiceFilter, setCareerChoiceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState('students');
   const [newStudent, setNewStudent] = useState({
     name: '',
     email: '',

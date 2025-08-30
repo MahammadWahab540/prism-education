@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -85,6 +86,7 @@ export function AnalyticsDashboard() {
   const [tenantSearchTerm, setTenantSearchTerm] = useState('');
   const [isStudentActivityOpen, setIsStudentActivityOpen] = useState(false);
   const [activitySearchTerm, setActivitySearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('engagement');
   const [activityFilter, setActivityFilter] = useState('all');
 
   // Mock tenants data for platform owner

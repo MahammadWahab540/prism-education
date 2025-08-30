@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -76,6 +77,7 @@ const chartConfig = {
 export function TenantReportsDashboard() {
   const [timeRange, setTimeRange] = useState('12m');
   const [reportType, setReportType] = useState('student-overview');
+  const [activeTab, setActiveTab] = useState('overview');
   const [selectedStudent, setSelectedStudent] = useState('all');
 
   // Comprehensive Student Portal Events Tracking
