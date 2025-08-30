@@ -100,73 +100,74 @@ const LearningPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
+      <div className="mx-auto max-w-[920px] px-4 sm:px-5 pb-12">
+        {/* Compact Header */}
+        <div className="py-3">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleBackToRoadmap}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 mb-3"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Roadmap
           </Button>
-        </div>
-
-        {/* Hero Section */}
-        <div className="text-center space-y-4 py-8">
-          <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent-luxury flex items-center justify-center">
-            <Brain className="h-8 w-8 text-white" />
+          
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0">
+              <Brain className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight truncate">
+                Introduction to Quantum Computing
+              </h1>
+              <p className="text-xs text-muted-foreground mt-1">
+                Stage 1: Core Concepts
+              </p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Lesson: Introduction to Quantum Computing
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Stage 1: Core Concepts
-          </p>
         </div>
 
-        {/* Navigation */}
-        <TubelightNavbar 
-          items={[
-            {
-              name: "Lesson Video",
-              icon: Youtube,
-              onClick: () => handleTabClick("video")
-            },
-            {
-              name: "AI Tutor",
-              icon: MessageCircle,
-              onClick: () => handleTabClick("tutor")
-            },
-            {
-              name: "AI Summary",
-              icon: FileText,
-              onClick: () => handleTabClick("summary")
-            },
-            {
-              name: "Case Study",
-              icon: Lightbulb,
-              onClick: () => handleTabClick("case-study")
-            },
-            {
-              name: "Dynamic Quiz",
-              icon: CheckCircle,
-              onClick: () => handleTabClick("quiz")
-            }
-          ]}
-          activeItem={activeTab}
-          className="relative top-0 mb-8"
-        />
+        {/* Sticky Tabs */}
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 -mx-4 sm:-mx-5 px-4 sm:px-5 mb-5">
+          <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
+            {tabItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabClick(item.id)}
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative min-w-fit flex-1 sm:flex-none justify-center ${
+                    isActive 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 sm:hidden" />
+                  <span className="hidden sm:inline">{item.title}</span>
+                  <span className="sm:hidden text-xs">{item.title.split(' ')[0]}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Tab Content */}
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
         >
           {activeTab === "video" && <VideoSection onProgressUpdate={handleVideoProgress} />}
           {activeTab === "tutor" && <AITutorSection />}
