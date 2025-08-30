@@ -19,14 +19,12 @@ interface RoadmapContainerProps {
 
 export function RoadmapContainer({ skillId, stages, onStageSelect }: RoadmapContainerProps) {
   const navigate = useNavigate();
-  const {
-    progress,
-    updateVideoProgress,
-    completeQuiz,
-    isStageUnlocked,
-    getOverallProgress,
-    getCurrentStage,
-  } = useUnlockLogic(skillId);
+    const {
+      progress,
+      updateVideoProgress,
+      completeQuiz,
+      isStageUnlocked,
+    } = useUnlockLogic(skillId, stages.length);
 
   const handleStartStage = (stageId: string) => {
     // Navigate to the learning page

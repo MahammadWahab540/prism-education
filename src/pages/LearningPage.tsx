@@ -64,7 +64,7 @@ const transition = { type: "spring", bounce: 0, duration: 0.4 };
 const LearningPage = () => {
   const { skillId, stageId } = useParams();
   const navigate = useNavigate();
-  const { updateVideoProgress, completeQuiz } = useUnlockLogic(skillId || '');
+  const { updateVideoProgress, completeQuiz } = useUnlockLogic(skillId || '', 6);
   const [activeTab, setActiveTab] = useState("video");
   const [activeNotification, setActiveNotification] = useState<string | null>(null);
 

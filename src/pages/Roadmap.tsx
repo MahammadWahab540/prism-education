@@ -29,8 +29,6 @@ const Roadmap = () => {
   };
 
   const currentSkill = skillData[skillId as keyof typeof skillData] || skillData['javascript-typescript'];
-  
-  const { getOverallProgress, getCurrentStage } = useUnlockLogic(skillId || 'javascript-typescript');
 
   // Mock stages data
   const stages = [
@@ -84,6 +82,11 @@ const Roadmap = () => {
     },
   ];
 
+  const { getOverallProgress, getCurrentStage } = useUnlockLogic(
+    skillId || 'javascript-typescript',
+    stages.length
+  );
+
   const handleStageSelect = (stageId: string) => {
     console.log('Navigate to learning page for stage:', stageId);
     // Here you would navigate to the actual learning page
@@ -128,7 +131,7 @@ const Roadmap = () => {
         {/* Progress Tracker */}
         <ProgressTracker
           currentStage={getCurrentStage()}
-          totalStages={6}
+          totalStages={stages.length}
           overallProgress={getOverallProgress()}
           skillTitle={currentSkill.title}
         />
