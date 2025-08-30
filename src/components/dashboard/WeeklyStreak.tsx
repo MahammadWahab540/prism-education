@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Flame, Calendar, Target, Trophy, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
 
 interface WeeklyStreakProps {
@@ -32,12 +33,18 @@ export function WeeklyStreak({
 }: WeeklyStreakProps) {
   const [animatedStreak, setAnimatedStreak] = useState(0);
   const [animatedProgress, setAnimatedProgress] = useState(0);
+  const { showStreakNotification } = useNotifications();
 
   const progressPercentage = (completedDays / weeklyGoal) * 100;
 
   useEffect(() => {
     const streakTimer = setTimeout(() => {
       setAnimatedStreak(currentStreak);
+      
+      // Show streak notification for milestones
+      if (currentStreak > 0 && currentStreak % 7 === 0) {
+        showStreakNotification(currentStreak);
+      }
     }, 500);
 
     const progressTimer = setTimeout(() => {
@@ -48,7 +55,7 @@ export function WeeklyStreak({
       clearTimeout(streakTimer);
       clearTimeout(progressTimer);
     };
-  }, [currentStreak, progressPercentage]);
+  }, [currentStreak, progressPercentage, showStreakNotification]);
 
   return (
     <div className="w-full max-w-md mx-auto p-6 glass-card rounded-2xl shadow-elevated">

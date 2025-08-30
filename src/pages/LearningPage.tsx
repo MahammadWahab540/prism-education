@@ -6,7 +6,9 @@ import { ArrowLeft, Brain, Youtube, MessageCircle, FileText, Lightbulb, CheckCir
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
+import { NotificationBanner } from '@/components/ui/notification-banner';
 import { useUnlockLogic } from '@/hooks/useUnlockLogic';
+import { useNotifications } from '@/hooks/useNotifications';
 import { VideoSection } from '@/components/learning/VideoSection';
 import { AITutorSection } from '@/components/learning/AITutorSection';
 import { AISummarySection } from '@/components/learning/AISummarySection';
@@ -65,6 +67,7 @@ const LearningPage = () => {
   const { skillId, stageId } = useParams();
   const navigate = useNavigate();
   const { updateVideoProgress, completeQuiz } = useUnlockLogic(skillId || '', 6);
+  const { showLearningNotification, showQuizNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState("video");
   const [activeNotification, setActiveNotification] = useState<string | null>(null);
 
@@ -72,17 +75,23 @@ const LearningPage = () => {
     { id: "video", title: "Lesson Video", icon: Youtube, component: VideoSection },
     { id: "tutor", title: "AI Tutor", icon: MessageCircle, component: AITutorSection },
     { id: "summary", title: "AI Summary", icon: FileText, component: AISummarySection },
-    { id: "case-study", title: "AI Case Study", icon: Lightbulb, component: CaseStudySection },
+    { id: "case-study", title: "Case Study", icon: Lightbulb, component: CaseStudySection },
     { id: "quiz", title: "Dynamic Quiz", icon: CheckCircle, component: QuizSection },
   ];
 
   const handleVideoProgress = (progress: number) => {
     updateVideoProgress(stageId || '', progress);
+    
+    // Show notification for significant progress milestones
+    if (progress >= 50 && progress < 60) {
+      showLearningNotification("Introduction to Quantum Computing", Math.round(progress));
+    }
   };
 
   const handleQuizComplete = (passed: boolean) => {
     if (passed) {
       completeQuiz(stageId || '');
+      showQuizNotification("Quantum Computing Quiz", 85); // Example score
     }
   };
 
@@ -100,6 +109,7 @@ const LearningPage = () => {
 
   return (
     <DashboardLayout>
+      <NotificationBanner />
       <div className="mx-auto max-w-[920px] px-4 sm:px-5 pb-12">
         {/* Compact Header */}
         <div className="py-3">
