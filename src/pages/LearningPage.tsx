@@ -130,34 +130,36 @@ const LearningPage = () => {
 
         {/* Sticky Tabs */}
         <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 -mx-4 sm:-mx-5 px-4 sm:px-5 mb-5">
-          <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
-            {tabItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleTabClick(item.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative min-w-fit flex-1 sm:flex-none justify-center ${
-                    isActive 
-                      ? 'text-primary' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 sm:hidden" />
-                  <span className="hidden sm:inline">{item.title}</span>
-                  <span className="sm:hidden text-xs">{item.title.split(' ')[0]}</span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
+          <div className="max-w-[920px] mx-auto">
+            <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
+              {tabItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabClick(item.id)}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative min-w-fit flex-1 sm:flex-none justify-center ${
+                      isActive 
+                        ? 'text-primary' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">{item.title}</span>
+                    <span className="sm:hidden text-xs">{item.title.split(' ')[0]}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                        transition={{ duration: 0.2 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
