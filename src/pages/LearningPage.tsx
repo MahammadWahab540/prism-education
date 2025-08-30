@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, Youtube, MessageCircle, FileText, Lightbulb, CheckCircle } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
+import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
 import { useUnlockLogic } from '@/hooks/useUnlockLogic';
 import { VideoSection } from '@/components/learning/VideoSection';
 import { AITutorSection } from '@/components/learning/AITutorSection';
@@ -128,55 +128,36 @@ const LearningPage = () => {
         </div>
 
         {/* Navigation */}
-        <DropdownNavigation 
-          navItems={[
+        <TubelightNavbar 
+          items={[
             {
-              id: 1,
-              label: "Learning",
-              subMenus: [
-                {
-                  title: "Content",
-                  items: [
-                    {
-                      label: "Lesson Video",
-                      description: "Watch the main lesson content",
-                      icon: Youtube,
-                      onClick: () => setActiveTab("video")
-                    },
-                    {
-                      label: "AI Summary", 
-                      description: "Get AI-generated lesson summary",
-                      icon: FileText,
-                      onClick: () => setActiveTab("summary")
-                    }
-                  ]
-                },
-                {
-                  title: "Interactive",
-                  items: [
-                    {
-                      label: "AI Tutor",
-                      description: "Chat with AI for help and questions",
-                      icon: MessageCircle,
-                      onClick: () => setActiveTab("tutor")
-                    },
-                    {
-                      label: "Case Study",
-                      description: "Explore real-world applications",
-                      icon: Lightbulb,
-                      onClick: () => setActiveTab("case-study")
-                    },
-                    {
-                      label: "Dynamic Quiz",
-                      description: "Test your understanding",
-                      icon: CheckCircle,
-                      onClick: () => setActiveTab("quiz")
-                    }
-                  ]
-                }
-              ]
+              name: "Lesson Video",
+              icon: Youtube,
+              onClick: () => handleTabClick("video")
+            },
+            {
+              name: "AI Tutor",
+              icon: MessageCircle,
+              onClick: () => handleTabClick("tutor")
+            },
+            {
+              name: "AI Summary",
+              icon: FileText,
+              onClick: () => handleTabClick("summary")
+            },
+            {
+              name: "Case Study",
+              icon: Lightbulb,
+              onClick: () => handleTabClick("case-study")
+            },
+            {
+              name: "Dynamic Quiz",
+              icon: CheckCircle,
+              onClick: () => handleTabClick("quiz")
             }
           ]}
+          activeItem={activeTab}
+          className="relative top-0 mb-8"
         />
 
         {/* Tab Content */}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
+import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -513,6 +513,44 @@ export function AnalyticsDashboard() {
           animationType="pulse"
         />
       </div>
+
+      {/* Navigation */}
+      <TubelightNavbar 
+        items={[
+          {
+            name: "Engagement",
+            icon: Activity,
+            onClick: () => setActiveTab('engagement')
+          },
+          {
+            name: "Learning",
+            icon: BookOpen,
+            onClick: () => setActiveTab('learning')
+          },
+          {
+            name: "Skills",
+            icon: Target,
+            onClick: () => setActiveTab('skills')
+          },
+          {
+            name: "Students",
+            icon: Users,
+            onClick: () => setActiveTab('students')
+          },
+          {
+            name: "Tenants",
+            icon: Building2,
+            onClick: () => setActiveTab('tenants')
+          },
+          {
+            name: "Activity",
+            icon: Activity,
+            onClick: () => setActiveTab('activity')
+          }
+        ]}
+        activeItem={activeTab}
+        className="relative top-0 mb-8"
+      />
 
       <Tabs defaultValue="engagement" className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">

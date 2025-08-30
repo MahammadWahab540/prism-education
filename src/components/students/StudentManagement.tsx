@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
+import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
@@ -546,7 +546,30 @@ export function StudentManagement() {
         </Card>
       </div>
 
-      <Tabs defaultValue="students" className="space-y-6">
+      {/* Navigation */}
+      <TubelightNavbar 
+        items={[
+          {
+            name: "Students",
+            icon: Users,
+            onClick: () => setActiveTab('students')
+          },
+          {
+            name: "Progress",
+            icon: Target,
+            onClick: () => setActiveTab('progress')
+          },
+          {
+            name: "Analytics",
+            icon: TrendingUp,
+            onClick: () => setActiveTab('analytics')
+          }
+        ]}
+        activeItem={activeTab}
+        className="relative top-0 mb-8"
+      />
+
+      <Tabs defaultValue={activeTab} value={activeTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="students">All Students</TabsTrigger>
           <TabsTrigger value="progress">Progress Tracking</TabsTrigger>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
+import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -545,6 +545,39 @@ export function TenantReportsDashboard() {
           animationType="pulse"
         />
       </div>
+
+      {/* Navigation */}
+      <TubelightNavbar 
+        items={[
+          {
+            name: "Student Overview",
+            icon: Users,
+            onClick: () => setActiveTab('overview')
+          },
+          {
+            name: "Learning Analytics",
+            icon: BookOpen,
+            onClick: () => setActiveTab('learning')
+          },
+          {
+            name: "Engagement Tracking",
+            icon: Activity,
+            onClick: () => setActiveTab('engagement')
+          },
+          {
+            name: "Portal Events",
+            icon: Brain,
+            onClick: () => setActiveTab('events')
+          },
+          {
+            name: "Individual Reports",
+            icon: FileText,
+            onClick: () => setActiveTab('reports')
+          }
+        ]}
+        activeItem={activeTab}
+        className="relative top-0 mb-8"
+      />
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">

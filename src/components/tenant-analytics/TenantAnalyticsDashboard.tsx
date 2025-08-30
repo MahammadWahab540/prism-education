@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DropdownNavigation } from '@/components/ui/dropdown-navigation';
+import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -345,6 +345,34 @@ export function TenantAnalyticsDashboard() {
           animationType="pulse"
         />
       </div>
+
+      {/* Navigation */}
+      <TubelightNavbar 
+        items={[
+          {
+            name: "Students",
+            icon: Users,
+            onClick: () => setActiveTab('performance')
+          },
+          {
+            name: "Learning Progress",
+            icon: Award,
+            onClick: () => setActiveTab('revenue')
+          },
+          {
+            name: "Engagement",
+            icon: Activity,
+            onClick: () => setActiveTab('engagement')
+          },
+          {
+            name: "Performance Score",
+            icon: Star,
+            onClick: () => setActiveTab('health')
+          }
+        ]}
+        activeItem={activeTab}
+        className="relative top-0 mb-8"
+      />
 
       <Tabs defaultValue="performance" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
