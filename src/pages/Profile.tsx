@@ -92,7 +92,7 @@ export function Profile() {
                 glareIntensity={0.2}
                 borderRadius={0}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
               
               {/* Profile Info Overlay */}
               <div className="absolute bottom-6 left-6 right-6 text-white">
