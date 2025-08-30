@@ -143,7 +143,7 @@ export function StudentDashboard() {
           </div>
           <Button 
             onClick={handleResumeLearning}
-            className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-medium"
           >
             <Play className="w-4 h-4 mr-2" />
             Resume Learning
@@ -202,7 +202,7 @@ export function StudentDashboard() {
                     <Button 
                       size="sm" 
                       onClick={(e) => handlePlayLesson(course, e)}
-                      className="bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                      className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
                     >
                       <Play className="w-4 h-4" />
                     </Button>
@@ -217,14 +217,14 @@ export function StudentDashboard() {
             {/* Achievements */}
             <Card className="glass-card p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Award className="w-5 h-5 mr-2 text-accent-luxury" />
+                <Award className="w-5 h-5 mr-2 text-primary" />
                 Recent Achievements
               </h3>
               <div className="space-y-3">
                 {achievements.map((achievement, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-white/20 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-gradient-to-br from-accent-luxury/30 to-primary/30 rounded-lg flex items-center justify-center">
-                      <achievement.icon className="w-4 h-4 text-accent-luxury" />
+                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-white/30 backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/40 rounded-lg flex items-center justify-center">
+                      <achievement.icon className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{achievement.title}</p>
@@ -243,7 +243,7 @@ export function StudentDashboard() {
               </h3>
               <div className="space-y-3">
                 {upcomingDeadlines.map((deadline, index) => (
-                  <div key={index} className={`p-3 rounded-lg ${deadline.urgent ? 'bg-accent-warning/10 border border-accent-warning/20' : 'bg-white/20'} backdrop-blur-sm`}>
+                  <div key={index} className={`p-3 rounded-lg ${deadline.urgent ? 'bg-accent-warning/10 border border-accent-warning/20' : 'bg-white/30'} backdrop-blur-sm`}>
                     <p className="text-sm font-medium">{deadline.title}</p>
                     <p className="text-xs text-muted-foreground">{deadline.course}</p>
                     <p className={`text-xs mt-1 ${deadline.urgent ? 'text-accent-warning font-medium' : 'text-muted-foreground'}`}>

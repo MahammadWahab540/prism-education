@@ -168,7 +168,7 @@ export function RoleSidebar() {
                       className="flex w-fit items-center gap-2 px-2"
                     >
                       <Avatar className="rounded size-4">
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent-luxury text-white text-xs">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                           {organizationName.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
@@ -281,7 +281,7 @@ export function RoleSidebar() {
                       <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
                         <Avatar className="size-4">
                           <AvatarImage src={user.avatar} alt={user.name} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent-luxury text-white text-xs">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             {user.name?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
@@ -302,7 +302,7 @@ export function RoleSidebar() {
                       <div className="flex flex-row items-center gap-2 p-2">
                         <Avatar className="size-6">
                           <AvatarImage src={user.avatar} alt={user.name} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent-luxury text-white">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
                             {user.name?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
