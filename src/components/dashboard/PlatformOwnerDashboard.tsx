@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AnimatedKpiCard } from '@/components/ui/animated-kpi-card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CourseManagement } from '@/components/platform-owner/CourseManagement';
 import { 
   Users, 
   Building2, 
@@ -12,7 +14,9 @@ import {
   Plus,
   ChevronRight,
   Activity,
-  Globe
+  Globe,
+  BookOpen,
+  BarChart3
 } from 'lucide-react';
 
 export function PlatformOwnerDashboard() {
@@ -63,7 +67,7 @@ export function PlatformOwnerDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-luxury">Platform Overview</h1>
+          <h1 className="text-3xl font-bold text-gradient-luxury">Platform Management</h1>
           <p className="text-muted-foreground mt-2">Manage your entire learning ecosystem</p>
         </div>
         <div className="flex space-x-3">
@@ -77,6 +81,20 @@ export function PlatformOwnerDashboard() {
           </Button>
         </div>
       </div>
+
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:w-fit">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="courses" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Course Management
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-8">
 
       {/* Animated Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -167,6 +185,12 @@ export function PlatformOwnerDashboard() {
           </div>
         </Card>
       </div>
+        </TabsContent>
+
+        <TabsContent value="courses">
+          <CourseManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

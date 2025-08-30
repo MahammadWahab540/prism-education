@@ -16,7 +16,7 @@ export function AITutorSection() {
     {
       id: 1,
       sender: "AI Tutor",
-      message: "Hello! I'm your AI Tutor. Ask me anything about quantum computing concepts like qubits, superposition, or entanglement!",
+      message: "Hello! I'm your AI Tutor for the 'Introduction to Quantum Physics' stage. Ask me anything about the quantum concepts we're covering in this specific lesson!",
       isAI: true
     }
   ]);
@@ -34,16 +34,20 @@ export function AITutorSection() {
 
     setChatMessages(prev => [...prev, userMessage]);
 
-    // Simple AI response based on keywords
-    let aiResponse = "That's an interesting question! Could you be more specific about which quantum computing concept you'd like to explore?";
+    // Stage-specific AI response - context limited to current lesson
+    let aiResponse = "That's an interesting question! In this 'Introduction to Quantum Physics' stage, I can help you understand the foundational concepts we're covering. Could you ask about qubits, superposition, or other basics from this specific lesson?";
     
     const input = chatInput.toLowerCase();
+    const currentStage = "Introduction to Quantum Physics"; // This would come from props in a real implementation
+    
     if (input.includes("qubit")) {
-      aiResponse = "Great question about qubits! A qubit is the basic unit of quantum information. Unlike classical bits that are either 0 or 1, qubits can exist in a superposition of both states simultaneously, giving quantum computers their incredible power.";
+      aiResponse = `Great question about qubits in "${currentStage}"! A qubit is the fundamental unit of quantum information that we're covering in this stage. Unlike classical bits that can only be 0 or 1, qubits can exist in a superposition of both states simultaneously. This is the foundation we need before moving to the next stages.`;
     } else if (input.includes("superposition")) {
-      aiResponse = "Superposition is one of the most fascinating aspects of quantum mechanics! It allows quantum particles to exist in multiple states at the same time. Think of it like a coin that's spinning in the air - it's neither heads nor tails until it lands and is measured.";
+      aiResponse = `Excellent! Superposition is a key concept in "${currentStage}". It means a quantum particle can exist in multiple states at the same time. In this introductory stage, think of it as the quantum version of a coin spinning in the air - it's neither heads nor tails until it lands. This principle is what makes quantum computing fundamentally different.`;
     } else if (input.includes("entanglement")) {
-      aiResponse = "Quantum entanglement is often called 'spooky action at a distance.' When particles become entangled, measuring one particle instantly affects its partner, no matter how far apart they are. This property is crucial for quantum computing and quantum communication.";
+      aiResponse = `Good question about entanglement! While we touch on this in "${currentStage}", we'll explore it in much greater detail in later stages. For now, just know that entanglement is when quantum particles become connected in a special way - measuring one affects the other instantly, regardless of distance.`;
+    } else if (input.includes("next") || input.includes("stage")) {
+      aiResponse = `In "${currentStage}", we focus on the fundamental concepts. The next stages will build upon what you learn here, covering qubits in more detail, quantum gates, and practical applications. Make sure you understand superposition before moving forward!`;
     }
 
     const aiMessage: Message = {

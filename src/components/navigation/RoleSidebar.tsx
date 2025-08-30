@@ -37,6 +37,7 @@ import {
   ClipboardList,
   PieChart,
   UserCircle,
+  Target,
 } from 'lucide-react';
 
 const sidebarVariants = {
@@ -81,31 +82,29 @@ const getNavigationItems = (role: string) => {
     case 'platform_owner':
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+        { title: 'Course Management', url: '/course-management', icon: BookOpen },
         { title: 'Tenants', url: '/tenants', icon: Building2 },
+        { title: 'Students', url: '/students', icon: GraduationCap },
         { title: 'Analytics', url: '/analytics', icon: BarChart3 },
         { title: 'System Users', url: '/system-users', icon: Users },
         { title: 'Reports', url: '/system-reports', icon: FileText },
+        { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
         { title: 'Billing', url: '/billing', icon: TrendingUp },
       ];
     case 'tenant_admin':
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'Courses', url: '/courses', icon: BookOpen },
         { title: 'Students', url: '/students', icon: GraduationCap },
-        { title: 'Instructors', url: '/instructors', icon: UserCog },
         { title: 'Analytics', url: '/tenant-analytics', icon: PieChart },
         { title: 'Reports', url: '/tenant-reports', icon: FileText },
-        { title: 'Calendar', url: '/calendar', icon: Calendar },
+        { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
       ];
     case 'student':
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'My Skills', url: '/my-skills', icon: BookOpen },
-        { title: 'Assignments', url: '/assignments', icon: ClipboardList },
-        { title: 'Grades', url: '/grades', icon: Award },
-        { title: 'Calendar', url: '/student-calendar', icon: Calendar },
-        { title: 'Messages', url: '/messages', icon: MessageSquare },
-        { title: 'Library', url: '/library', icon: School },
+        { title: 'Learning Path', url: '/learning-path', icon: Target },
+        { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
       ];
     default:
       return [];
@@ -257,25 +256,6 @@ export function RoleSidebar() {
                     
                     <Separator className="w-full my-2" />
                     
-                    {/* Role-specific additional items */}
-                    {user.role === 'student' && (
-                      <Link
-                        to="/help"
-                        className={cn(
-                          'flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary',
-                          location.pathname === '/help' && 'bg-muted text-primary',
-                        )}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        <motion.li variants={variants}>
-                          {!isCollapsed && (
-                            <div className="flex items-center gap-2">
-                              <p className="ml-2 text-sm font-medium">Help & Support</p>
-                            </div>
-                          )}
-                        </motion.li>
-                      </Link>
-                    )}
                   </div>
                 </ScrollArea>
               </div>

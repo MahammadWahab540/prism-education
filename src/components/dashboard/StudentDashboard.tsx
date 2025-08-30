@@ -1,10 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { GradientText } from '@/components/ui/gradient-text';
 import { AnimatedKpiCard } from '@/components/ui/animated-kpi-card';
+import { toast } from '@/hooks/use-toast';
 import { 
   BookOpen, 
   Play, 
@@ -19,6 +21,8 @@ import {
 import { RightProfilePanel } from './RightProfilePanel';
 
 export function StudentDashboard() {
+  const navigate = useNavigate();
+  
   const stats = [
     { 
       label: 'Courses in Progress', 
@@ -48,28 +52,37 @@ export function StudentDashboard() {
 
   const courses = [
     { 
+      id: 'react-dev',
       title: 'Advanced React Development',
       instructor: 'Sarah Chen',
       progress: 68,
       nextLesson: 'State Management with Redux',
       timeLeft: '2h 15m',
-      category: 'Development'
+      category: 'Development',
+      skillId: 'react',
+      stageId: 'advanced'
     },
     { 
+      id: 'uiux-design',
       title: 'UI/UX Design Fundamentals',
       instructor: 'Mike Johnson', 
       progress: 45,
       nextLesson: 'Color Theory and Psychology',
       timeLeft: '1h 30m',
-      category: 'Design'
+      category: 'Design',
+      skillId: 'design',
+      stageId: 'fundamentals'
     },
     { 
+      id: 'digital-marketing',
       title: 'Digital Marketing Strategy',
       instructor: 'Alex Rivera',
       progress: 82,
       nextLesson: 'Social Media Analytics',
       timeLeft: '45m',
-      category: 'Marketing'
+      category: 'Marketing',
+      skillId: 'marketing',
+      stageId: 'strategy'
     }
   ];
 
@@ -85,6 +98,37 @@ export function StudentDashboard() {
     { title: 'Marketing Campaign Analysis', course: 'Digital Marketing', dueDate: 'Next week', urgent: false }
   ];
 
+  const handleResumeLearning = () => {
+    // Navigate to the most recent course or my skills page
+    const lastCourse = courses.find(course => course.progress > 0);
+    if (lastCourse) {
+      navigate(`/learn/${lastCourse.skillId}/${lastCourse.stageId}`);
+    } else {
+      navigate('/my-skills');
+    }
+    toast({
+      title: "Resuming Learning",
+      description: "Continuing your learning journey...",
+    });
+  };
+
+  const handleCourseClick = (course: typeof courses[0]) => {
+    navigate(`/learn/${course.skillId}/${course.stageId}`);
+    toast({
+      title: `Opening ${course.title}`,
+      description: `Starting: ${course.nextLesson}`,
+    });
+  };
+
+  const handlePlayLesson = (course: typeof courses[0], e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent course card click
+    navigate(`/learn/${course.skillId}/${course.stageId}`);
+    toast({
+      title: "Starting Lesson",
+      description: course.nextLesson,
+    });
+  };
+
   return (
     <div className="flex gap-8">
       {/* Main Content */}
@@ -97,7 +141,10 @@ export function StudentDashboard() {
             </h1>
             <p className="text-muted-foreground mt-2">Continue your learning journey</p>
           </div>
-          <Button className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium">
+          <Button 
+            onClick={handleResumeLearning}
+            className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium"
+          >
             <Play className="w-4 h-4 mr-2" />
             Resume Learning
           </Button>
@@ -121,7 +168,11 @@ export function StudentDashboard() {
           <div className="lg:col-span-2 space-y-6">
             <h3 className="text-xl font-semibold">Continue Learning</h3>
             {courses.map((course) => (
-              <Card key={course.title} className="glass-card p-6 hover:shadow-elevated transition-all duration-300 cursor-pointer group">
+              <Card 
+                key={course.title} 
+                onClick={() => handleCourseClick(course)}
+                className="glass-card p-6 hover:shadow-elevated transition-all duration-300 cursor-pointer group"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
@@ -148,7 +199,11 @@ export function StudentDashboard() {
                         {course.timeLeft}
                       </p>
                     </div>
-                    <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary hover:text-white">
+                    <Button 
+                      size="sm" 
+                      onClick={(e) => handlePlayLesson(course, e)}
+                      className="bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                    >
                       <Play className="w-4 h-4" />
                     </Button>
                   </div>
