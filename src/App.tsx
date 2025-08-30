@@ -21,6 +21,7 @@ import TenantReports from '@/pages/TenantReports';
 import HelpSupport from '@/pages/HelpSupport';
 import Settings from '@/pages/Settings';
 import LearningPath from '@/pages/LearningPath';
+import { Profile } from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 
 function AppContent() {
@@ -49,6 +50,7 @@ function AppContent() {
                   <Route path="/help-support" element={<HelpSupport />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/learning-path" element={<LearningPath />} />
+                  <Route path="/profile" element={<Profile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </StudentRouteGuard>
