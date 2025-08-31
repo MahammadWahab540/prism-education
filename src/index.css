@@ -81,6 +81,51 @@
   }
 
   .dark {
+    /* Dark Mode Purple-Blue Gradient System */
+    --background: 225 15% 6%;
+    --foreground: 210 20% 98%;
+    
+    /* Dark Mode Gradient Tokens */
+    --gradient-pearl: linear-gradient(135deg, hsl(225 20% 8%) 0%, hsl(230 15% 10%) 50%, hsl(235 12% 12%) 100%);
+    --gradient-platinum: linear-gradient(135deg, hsl(223 18% 9%) 0%, hsl(228 13% 11%) 50%, hsl(233 10% 13%) 100%);
+    --gradient-silver: linear-gradient(135deg, hsl(227 15% 10%) 0%, hsl(232 12% 12%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsla(225 15% 15% / 0.95) 0%, hsla(230 12% 18% / 0.9) 100%);
+    
+    /* Dark Mode Card System */
+    --card: 225 15% 9%;
+    --card-foreground: 210 20% 98%;
+    --card-elevated: 225 15% 11%;
+    --card-glass: hsla(225 15% 12% / 0.98);
+    
+    /* Keep same primary colors for consistency */
+    --primary: 235 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 235 50% 15%;
+    
+    --secondary: 215 15% 15%;
+    --secondary-foreground: 220 20% 95%;
+    
+    /* Dark Mode Accent System */
+    --accent-luxury: 235 85% 55%;
+    --accent-success: 150 60% 50%;
+    --accent-warning: 35 85% 55%;
+    --accent-error: 0 70% 55%;
+    
+    /* Dark Mode Neutrals */
+    --muted: 225 15% 12%;
+    --muted-foreground: 235 15% 65%;
+    
+    --border: 225 15% 18%;
+    --input: 225 15% 15%;
+    --ring: 235 85% 55%;
+    
+    /* Dark Mode Shadows */
+    --shadow-soft: 0 2px 12px hsla(225 50% 2% / 0.5);
+    --shadow-medium: 0 4px 20px hsla(225 50% 2% / 0.6);
+    --shadow-elevated: 0 8px 35px hsla(225 50% 2% / 0.7);
+    --shadow-glass: 0 8px 30px hsla(225 50% 2% / 0.5);
+
+    /* Dark Mode Blue Gradient System */
     --color-1: 235 85% 55%; /* Primary Blue */
     --color-2: 245 70% 60%; /* Light Blue */  
     --color-3: 225 80% 50%; /* Deep Blue */
@@ -127,7 +172,7 @@
   .glass-card {
     background: var(--card-glass);
     backdrop-filter: blur(12px);
-    border: 1px solid hsla(220 20% 92% / 0.5);
+    border: 1px solid hsl(var(--border) / 0.5);
     box-shadow: var(--shadow-glass);
   }
   
