@@ -46,7 +46,7 @@ export function StudentDashboard() {
   useEffect(() => {
     const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
     setWelcomeMessage(randomMessage);
-  }, []);
+  }, []); // Cache refresh trigger
 
   // Extract first name from user
   const firstName = user?.name?.split(' ')[0] || 'Student';
