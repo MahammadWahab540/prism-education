@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { GradientText } from '@/components/ui/gradient-text';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -20,8 +19,17 @@ import {
   TrendingUp,
   Flame,
   Zap,
-  Lightbulb
+  Lightbulb,
+  Snowflake,
+  Timer
 } from 'lucide-react';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { RightProfilePanel } from './RightProfilePanel';
 import { useUpcomingDeadlines } from '@/hooks/useUpcomingDeadlines';
 
@@ -29,7 +37,17 @@ export function StudentDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [welcomeMessage, setWelcomeMessage] = useState('');
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProfileDrawer, setShowProfileDrawer] = useState(false);
+  
+  // Streak status logic
+  const [currentStreak] = useState(5); // Mock data - can be updated from API
+  const getStreakStatus = (streak: number) => {
+    if (streak >= 7) return { status: 'fire', icon: Flame, color: 'text-orange-500', bgColor: 'bg-orange-500/10' };
+    if (streak >= 3) return { status: 'warm', icon: Flame, color: 'text-yellow-500', bgColor: 'bg-yellow-500/10' };
+    return { status: 'cold', icon: Snowflake, color: 'text-blue-400', bgColor: 'bg-blue-400/10' };
+  };
+  
+  const streakStatus = getStreakStatus(currentStreak);
 
   // Dynamic welcome messages
   const welcomeMessages = [
@@ -55,36 +73,48 @@ export function StudentDashboard() {
   const kpiCards = [
     {
       id: 'consistency',
-      title: 'Consistency Habit',
-      value: "You're on a 5-day streak!",
-      icon: Flame,
-      bgGradient: 'from-orange-500/20 to-red-500/20',
-      iconBg: 'from-orange-500/30 to-red-500/30',
-      iconColor: 'text-orange-500',
+      title: 'Learning Streak',
+      subtitle: 'Keep the momentum going!',
+      mainValue: `${currentStreak}`,
+      mainLabel: currentStreak === 1 ? 'day' : 'days',
+      additionalInfo: 'This week: 5 days',
+      xpInfo: '0 XP earned',
+      icon: streakStatus.icon,
+      iconColor: streakStatus.color,
+      bgColor: streakStatus.bgColor,
       hasCTA: true,
-      ctaText: 'View Full Report'
+      ctaText: 'View Details'
     },
     {
       id: 'motivation',
-      title: 'Motivation & Engagement',
-      value: '876 Points • Rank #3',
-      icon: Zap,
-      bgGradient: 'from-blue-500/20 to-purple-500/20',
-      iconBg: 'from-blue-500/30 to-purple-500/30',
-      iconColor: 'text-blue-500',
-      hasCTA: false,
-      ctaText: ''
+      title: 'Ready for a challenge?',
+      subtitle: "You've mastered the basics. Time to tackle some advanced concepts!",
+      mainValue: '',
+      mainLabel: '',
+      additionalInfo: '',
+      xpInfo: '',
+      icon: Target,
+      iconColor: 'text-orange-500',
+      bgColor: 'bg-orange-500/10',
+      hasCTA: true,
+      ctaText: 'Take Challenge'
     },
     {
       id: 'recommendations',
-      title: 'Personalized Recommendations',
-      value: '3 new courses recommended for you',
-      icon: Lightbulb,
-      bgGradient: 'from-green-500/20 to-emerald-500/20',
-      iconBg: 'from-green-500/30 to-emerald-500/30',
-      iconColor: 'text-green-500',
+      title: 'Perfect timing for SQL Joins!',
+      subtitle: "Based on your progress in filtering, you're ready for the next step",
+      mainValue: '',
+      mainLabel: '',
+      additionalInfo: '15 min',
+      xpInfo: 'Video + Practice',
+      matchPercentage: '92% match',
+      difficulty: 'Intermediate',
+      icon: Play,
+      iconColor: 'text-blue-500',
+      bgColor: 'bg-blue-500/10',
       hasCTA: true,
-      ctaText: 'Explore Now'
+      ctaText: 'Start Now',
+      secondaryCTA: 'Save for Later'
     }
   ];
 
@@ -162,12 +192,24 @@ export function StudentDashboard() {
     });
   };
 
-  const handleKpiCTAClick = (cardId: string) => {
-    setShowProfileModal(true);
-    toast({
-      title: cardId === 'consistency' ? 'Opening Consistency Report' : 'Exploring Recommendations',
-      description: 'View your detailed progress information',
-    });
+  const handleKpiCTAClick = (cardId: string, isSecondary = false) => {
+    if (cardId === 'consistency') {
+      setShowProfileDrawer(true);
+      toast({
+        title: 'Opening Learning Details',
+        description: 'View your detailed progress information',
+      });
+    } else if (cardId === 'recommendations' && isSecondary) {
+      toast({
+        title: 'Saved for Later',
+        description: 'Course added to your saved list',
+      });
+    } else {
+      toast({
+        title: cardId === 'motivation' ? 'Starting Challenge' : 'Starting Course',
+        description: 'Launching your next learning experience',
+      });
+    }
   };
 
   return (
@@ -194,29 +236,76 @@ export function StudentDashboard() {
         {kpiCards.map((card) => (
           <Card 
             key={card.id}
-            className={`glass-card p-6 hover:shadow-elevated transition-all duration-300 bg-gradient-to-br ${card.bgGradient} border-0`}
+            className="bg-card border border-border/50 p-6 hover:shadow-md transition-all duration-300 rounded-xl"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.iconBg} flex items-center justify-center`}>
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-full ${card.bgColor} flex items-center justify-center flex-shrink-0`}>
                 <card.icon className={`w-6 h-6 ${card.iconColor}`} />
               </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <h3 className="font-semibold text-lg">{card.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{card.value}</p>
-              </div>
               
-              {card.hasCTA && (
-                <Button 
-                  size="sm" 
-                  onClick={() => handleKpiCTAClick(card.id)}
-                  className="w-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
-                >
-                  {card.ctaText}
-                </Button>
-              )}
+              <div className="flex-1 space-y-3">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-base">{card.title}</h3>
+                    {card.matchPercentage && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                        {card.matchPercentage}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">{card.subtitle}</p>
+                </div>
+                
+                {card.mainValue && (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-primary">{card.mainValue}</span>
+                    <span className="text-sm text-muted-foreground">{card.mainLabel}</span>
+                  </div>
+                )}
+                
+                {(card.additionalInfo || card.xpInfo) && (
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {card.additionalInfo && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {card.additionalInfo}
+                      </div>
+                    )}
+                    {card.xpInfo && (
+                      <div className="flex items-center gap-1">
+                        {card.id === 'consistency' ? <Trophy className="w-4 h-4" /> : <Timer className="w-4 h-4" />}
+                        {card.xpInfo}
+                      </div>
+                    )}
+                    {card.difficulty && (
+                      <Badge variant="outline" className="text-xs">
+                        {card.difficulty}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  {card.hasCTA && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleKpiCTAClick(card.id)}
+                      className={card.id === 'recommendations' ? "bg-blue-500 hover:bg-blue-600" : ""}
+                    >
+                      {card.ctaText}
+                    </Button>
+                  )}
+                  {card.secondaryCTA && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleKpiCTAClick(card.id, true)}
+                    >
+                      {card.secondaryCTA}
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </Card>
         ))}
@@ -317,13 +406,17 @@ export function StudentDashboard() {
         </div>
       </div>
 
-      {/* Profile Details Modal */}
-      <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
-        <DialogContent className="max-w-md p-0 overflow-hidden">
-          <DialogTitle className="sr-only">Profile Details</DialogTitle>
-          <RightProfilePanel />
-        </DialogContent>
-      </Dialog>
+      {/* Profile Details Drawer */}
+      <Drawer open={showProfileDrawer} onOpenChange={setShowProfileDrawer}>
+        <DrawerContent className="h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle>Learning Progress Details</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <RightProfilePanel />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
