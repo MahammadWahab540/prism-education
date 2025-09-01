@@ -26,7 +26,7 @@ export function StudentDashboard() {
   
   const stats = [
     { 
-      label: 'Courses in Progress', 
+      label: 'Skills in Progress', 
       value: '4', 
       icon: BookOpen,
       animationType: 'progress' as const
@@ -36,12 +36,6 @@ export function StudentDashboard() {
       value: '47', 
       icon: Clock,
       animationType: 'wave' as const
-    },
-    { 
-      label: 'Certificates Earned', 
-      value: '3', 
-      icon: Trophy,
-      animationType: 'geometric' as const
     },
     { 
       label: 'Current Streak', 
@@ -88,7 +82,7 @@ export function StudentDashboard() {
   ];
 
   const achievements = [
-    { title: 'First Course Complete', date: '2 days ago', icon: Trophy },
+    { title: 'First Skill Complete', date: '2 days ago', icon: Trophy },
     { title: '7-Day Learning Streak', date: '1 week ago', icon: Target },
     { title: 'Quick Learner', date: '2 weeks ago', icon: TrendingUp }
   ];
@@ -148,7 +142,7 @@ export function StudentDashboard() {
         </div>
 
         {/* Animated Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats.map((stat) => (
             <AnimatedKpiCard
               key={stat.label}
