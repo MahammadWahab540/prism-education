@@ -26,6 +26,7 @@ export function StudentDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
+  const firstName = user?.name?.split(' ')[0] ?? 'there';
 
   useEffect(() => {
     if (user) {
@@ -174,7 +175,7 @@ export function StudentDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">
-                <GradientText>Welcome back</GradientText>, John! 👋
+                <GradientText>Welcome back</GradientText>, {firstName}! 👋
               </h1>
               <p className="text-muted-foreground mt-2">Continue your learning journey</p>
             </div>
