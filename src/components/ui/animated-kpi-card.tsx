@@ -67,7 +67,7 @@ const WaveVisual: React.FC<{ hovered: boolean }> = ({ hovered }) => {
         />
         <path
           d="M0,85 Q50,45 100,65 T200,55 L200,100 L0,100 Z"
-          fill="hsl(var(--accent-luxury) / 0.1)"
+          fill="hsl(var(--primary) / 0.1)"
           className={cn(
             "transition-all duration-1000 ease-in-out",
             hovered ? "translate-y-0" : "translate-y-2"
@@ -93,7 +93,7 @@ const GeometricVisual: React.FC<{ hovered: boolean }> = ({ hovered }) => {
           <div
             key={i}
             className={cn(
-              "absolute w-2 h-2 bg-accent-luxury/40 rounded-full transition-all duration-1000 ease-in-out",
+              "absolute w-2 h-2 bg-primary/40 rounded-full transition-all duration-1000 ease-in-out",
               hovered ? "opacity-100" : "opacity-60"
             )}
             style={{
@@ -188,7 +188,7 @@ export function AnimatedKpiCard({
             </div>
           )}
         </div>
-        <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent-luxury/20 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-12">
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-12">
           <Icon className="w-6 h-6 text-primary" />
         </div>
       </div>

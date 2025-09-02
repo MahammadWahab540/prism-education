@@ -5,6 +5,7 @@ import { LearningPathProvider } from '@/contexts/LearningPathContext';
 import { StudentRouteGuard } from '@/components/guards/StudentRouteGuard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from "next-themes";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
@@ -21,6 +22,7 @@ import TenantReports from '@/pages/TenantReports';
 import HelpSupport from '@/pages/HelpSupport';
 import Settings from '@/pages/Settings';
 import LearningPath from '@/pages/LearningPath';
+import { Profile } from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 
 function AppContent() {
@@ -49,6 +51,7 @@ function AppContent() {
                   <Route path="/help-support" element={<HelpSupport />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/learning-path" element={<LearningPath />} />
+                  <Route path="/profile" element={<Profile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </StudentRouteGuard>
@@ -63,9 +66,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -2,6 +2,7 @@
 import React from 'react';
 import { RoleSidebar } from '@/components/navigation/RoleSidebar';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -17,7 +18,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="h-full overflow-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="flex justify-end mb-4">
-              <NotificationPanel />
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <NotificationPanel />
+              </div>
             </div>
             {children}
           </div>

@@ -1,12 +1,14 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, Youtube, MessageCircle, FileText, Lightbulb, CheckCircle } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
+import { NotificationBanner } from '@/components/ui/notification-banner';
 import { useUnlockLogic } from '@/hooks/useUnlockLogic';
+import { useNotifications } from '@/hooks/useNotifications';
 import { VideoSection } from '@/components/learning/VideoSection';
 import { AITutorSection } from '@/components/learning/AITutorSection';
 import { AISummarySection } from '@/components/learning/AISummarySection';
@@ -65,6 +67,7 @@ const LearningPage = () => {
   const { skillId, stageId } = useParams();
   const navigate = useNavigate();
   const { updateVideoProgress, completeQuiz } = useUnlockLogic(skillId || '', 6);
+  const { showLearningNotification, showQuizNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState("video");
   const [activeNotification, setActiveNotification] = useState<string | null>(null);
 
@@ -72,17 +75,23 @@ const LearningPage = () => {
     { id: "video", title: "Lesson Video", icon: Youtube, component: VideoSection },
     { id: "tutor", title: "AI Tutor", icon: MessageCircle, component: AITutorSection },
     { id: "summary", title: "AI Summary", icon: FileText, component: AISummarySection },
-    { id: "case-study", title: "AI Case Study", icon: Lightbulb, component: CaseStudySection },
+    { id: "case-study", title: "Case Study", icon: Lightbulb, component: CaseStudySection },
     { id: "quiz", title: "Dynamic Quiz", icon: CheckCircle, component: QuizSection },
   ];
 
   const handleVideoProgress = (progress: number) => {
     updateVideoProgress(stageId || '', progress);
+    
+    // Show notification for significant progress milestones
+    if (progress >= 50 && progress < 60) {
+      showLearningNotification("Introduction to Quantum Computing", Math.round(progress));
+    }
   };
 
   const handleQuizComplete = (passed: boolean) => {
     if (passed) {
       completeQuiz(stageId || '');
+      showQuizNotification("Quantum Computing Quiz", 85); // Example score
     }
   };
 
@@ -100,106 +109,66 @@ const LearningPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
+      <NotificationBanner />
+      <div className="mx-auto max-w-[920px] px-4 sm:px-5 pb-12">
+        {/* Compact Header */}
+        <div className="py-3">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleBackToRoadmap}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 mb-3"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Roadmap
           </Button>
-        </div>
-
-        {/* Hero Section */}
-        <div className="text-center space-y-4 py-8">
-          <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent-luxury flex items-center justify-center">
-            <Brain className="h-8 w-8 text-white" />
+          
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0">
+              <Brain className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight truncate">
+                Introduction to Quantum Computing
+              </h1>
+              <p className="text-xs text-muted-foreground mt-1">
+                Stage 1: Core Concepts
+              </p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Lesson: Introduction to Quantum Computing
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Stage 1: Core Concepts
-          </p>
         </div>
 
-        {/* Animated Tab Navigation */}
-        <div className="flex justify-center">
-          <div className={cn(
-            "flex items-center gap-1 p-2 relative",
-            "bg-background",
-            "border rounded-xl",
-            "transition-all duration-200",
-            "shadow-sm"
-          )}>
-            <AnimatePresence>
-              {activeNotification && (
-                <motion.div
-                  variants={notificationVariants as any}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{ duration: 0.3 }}
-                  className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-50"
-                >
-                  <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs">
-                    {tabItems.find(item => item.id === activeNotification)?.title} opened!
-                  </div>
-                  <motion.div
-                    variants={lineVariants as any}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    className="absolute -bottom-1 left-1/2 w-full h-[2px] bg-primary origin-left"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="flex items-center gap-1">
-              {tabItems.map((tab) => (
-                <motion.button
-                  key={tab.id}
-                  variants={buttonVariants as any}
-                  initial={false}
-                  animate="animate"
-                  custom={activeTab === tab.id}
-                  onClick={() => handleTabClick(tab.id)}
-                  transition={transition as any}
-                  className={cn(
-                    "relative flex items-center rounded-lg px-3 py-2",
-                    "text-sm font-medium transition-colors duration-300",
-                    activeTab === tab.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <tab.icon
-                    size={16}
-                    className={cn(
-                      activeTab === tab.id && "text-primary-foreground"
+        {/* Sticky Tabs */}
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 -mx-4 sm:-mx-5 px-4 sm:px-5 mb-5">
+          <div className="max-w-[920px] mx-auto">
+            <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
+              {tabItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabClick(item.id)}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative min-w-fit flex-1 sm:flex-none justify-center ${
+                      isActive 
+                        ? 'text-primary' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">{item.title}</span>
+                    <span className="sm:hidden text-xs">{item.title.split(' ')[0]}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                        transition={{ duration: 0.2 }}
+                      />
                     )}
-                  />
-                  <AnimatePresence initial={false}>
-                    {activeTab === tab.id && (
-                      <motion.span
-                        variants={spanVariants as any}
-                        initial="initial"
-                        animate="animate"
-                        exit="exit"
-                        transition={transition as any}
-                        className="overflow-hidden whitespace-nowrap"
-                      >
-                        {tab.title}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -207,10 +176,10 @@ const LearningPage = () => {
         {/* Tab Content */}
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
         >
           {activeTab === "video" && <VideoSection onProgressUpdate={handleVideoProgress} />}
           {activeTab === "tutor" && <AITutorSection />}

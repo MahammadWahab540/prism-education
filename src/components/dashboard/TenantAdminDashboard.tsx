@@ -98,7 +98,7 @@ export function TenantAdminDashboard() {
             <Users className="w-4 h-4 mr-2" />
             Manage Students
           </Button>
-          <Button className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium">
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-medium">
             <Plus className="w-4 h-4 mr-2" />
             New Course
           </Button>
@@ -128,7 +128,7 @@ export function TenantAdminDashboard() {
           </div>
           <div className="space-y-4">
             {courses.map((course) => (
-              <div key={course.title} className="p-4 rounded-lg bg-white/30 backdrop-blur-sm hover:bg-white/40 transition-all">
+              <div key={course.title} className="p-4 rounded-lg bg-white/40 backdrop-blur-sm hover:bg-white/50 transition-all">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h4 className="font-medium">{course.title}</h4>
@@ -156,7 +156,7 @@ export function TenantAdminDashboard() {
                 <div className="mt-3">
                   <div className="w-full bg-muted rounded-full h-2">
                     <div 
-                      className="bg-accent-success h-2 rounded-full" 
+                      className="bg-primary h-2 rounded-full" 
                       style={{width: `${course.completion}%`}}
                     ></div>
                   </div>
@@ -175,8 +175,8 @@ export function TenantAdminDashboard() {
           
           <div className="space-y-4">
             {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-white/20 transition-all">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary/30 to-accent-luxury/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-white/30 transition-all">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/40 rounded-lg flex items-center justify-center flex-shrink-0">
                   {activity.action.includes('enrolled') && <Users className="w-4 h-4 text-primary" />}
                   {activity.action.includes('submitted') && <Clock className="w-4 h-4 text-primary" />}
                   {activity.action.includes('completed') && <CheckCircle className="w-4 h-4 text-primary" />}

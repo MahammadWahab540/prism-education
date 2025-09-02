@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { 
   BookOpen, 
-  Play, 
+  Play,
   Clock, 
   Trophy, 
   Target,
@@ -21,6 +21,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { RightProfilePanel } from './RightProfilePanel';
+import { useUpcomingDeadlines } from '@/hooks/useUpcomingDeadlines';
 
 export function StudentDashboard() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function StudentDashboard() {
 
   const stats = [
     { 
-      label: 'Courses in Progress', 
+      label: 'Skills in Progress', 
       value: '4', 
       icon: BookOpen,
       animationType: 'progress' as const
@@ -50,12 +51,6 @@ export function StudentDashboard() {
       value: '47', 
       icon: Clock,
       animationType: 'wave' as const
-    },
-    { 
-      label: 'Certificates Earned', 
-      value: '3', 
-      icon: Trophy,
-      animationType: 'geometric' as const
     },
     { 
       label: 'Current Streak', 
@@ -102,19 +97,17 @@ export function StudentDashboard() {
   ];
 
   const achievements = [
-    { title: 'First Course Complete', date: '2 days ago', icon: Trophy },
+    { title: 'First Skill Complete', date: '2 days ago', icon: Trophy },
     { title: '7-Day Learning Streak', date: '1 week ago', icon: Target },
     { title: 'Quick Learner', date: '2 weeks ago', icon: TrendingUp }
   ];
 
-  const upcomingDeadlines = [
-    { title: 'React Project Submission', course: 'React Development', dueDate: 'Tomorrow', urgent: true },
-    { title: 'Design Portfolio Review', course: 'UI/UX Fundamentals', dueDate: 'In 3 days', urgent: false },
-    { title: 'Marketing Campaign Analysis', course: 'Digital Marketing', dueDate: 'Next week', urgent: false }
-  ];
+  const { deadlines, hasDeadlines } = useUpcomingDeadlines();
+
+  // Normalize upcomingDeadlines for rendering
+  const upcomingDeadlines = deadlines ?? [];
 
   const handleResumeLearning = () => {
-    // Navigate to the most recent course or my skills page
     const lastCourse = courses.find(course => course.progress > 0);
     if (lastCourse) {
       navigate(`/learn/${lastCourse.skillId}/${lastCourse.stageId}`);
@@ -136,7 +129,7 @@ export function StudentDashboard() {
   };
 
   const handlePlayLesson = (course: typeof courses[0], e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent course card click
+    e.stopPropagation();
     navigate(`/learn/${course.skillId}/${course.stageId}`);
     toast({
       title: "Starting Lesson",
@@ -274,23 +267,25 @@ export function StudentDashboard() {
               </Card>
 
               {/* Upcoming Deadlines */}
-              <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Calendar className="w-5 h-5 mr-2 text-accent-warning" />
-                  Upcoming Deadlines
-                </h3>
-                <div className="space-y-3">
-                  {upcomingDeadlines.map((deadline, index) => (
-                    <div key={index} className={`p-3 rounded-lg ${deadline.urgent ? 'bg-accent-warning/10 border border-accent-warning/20' : 'bg-white/20'} backdrop-blur-sm`}>
-                      <p className="text-sm font-medium">{deadline.title}</p>
-                      <p className="text-xs text-muted-foreground">{deadline.course}</p>
-                      <p className={`text-xs mt-1 ${deadline.urgent ? 'text-accent-warning font-medium' : 'text-muted-foreground'}`}>
-                        Due {deadline.dueDate}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+              {hasDeadlines && (
+                <Card className="glass-card p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-accent-warning" />
+                    Upcoming Deadlines
+                  </h3>
+                  <div className="space-y-3">
+                    {upcomingDeadlines.map((deadline, index) => (
+                      <div key={index} className={`p-3 rounded-lg ${deadline.urgent ? 'bg-accent-warning/10 border border-accent-warning/20' : 'bg-white/20'} backdrop-blur-sm`}>
+                        <p className="text-sm font-medium">{deadline.title}</p>
+                        <p className="text-xs text-muted-foreground">{deadline.course ?? deadline.skillName}</p>
+                        <p className={`text-xs mt-1 ${deadline.urgent ? 'text-accent-warning font-medium' : 'text-muted-foreground'}`}>
+                          Due {deadline.dueDate ?? `${deadline.estimatedHours}h estimated`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
             </div>
           </div>
         </div>
