@@ -18,7 +18,10 @@ export function StudentRouteGuard({ children }: StudentRouteGuardProps) {
     '/learning-path',
     '/logout',
     '/',
-    '/dashboard' // Allow dashboard access but show onboarding banner
+    '/dashboard', // Allow dashboard access but show onboarding banner
+    '/account/settings',
+    '/settings',
+    '/profile/learning-history'
   ];
 
   const isWhitelisted = whitelistedPaths.some(path => 

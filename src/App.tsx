@@ -1,11 +1,11 @@
-
+import React from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { LearningPathProvider } from '@/contexts/LearningPathContext';
 import { StudentRouteGuard } from '@/components/guards/StudentRouteGuard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
@@ -20,14 +20,16 @@ import Students from '@/pages/Students';
 import TenantAnalytics from '@/pages/TenantAnalytics';
 import TenantReports from '@/pages/TenantReports';
 import HelpSupport from '@/pages/HelpSupport';
-import Settings from '@/pages/Settings';
 import LearningPath from '@/pages/LearningPath';
 import { Profile } from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 
+const AccountSettingsRoute = React.lazy(() => import('@/pages/AccountSettingsRoute'));
+const LearningHistory = React.lazy(() => import('@/pages/LearningHistory'));
+
 function AppContent() {
   const { user } = useAuth();
-  
+
   return (
     <NotificationProvider userId={user?.id || 'guest'}>
       <LearningPathProvider>
@@ -49,9 +51,11 @@ function AppContent() {
                   <Route path="/system-users" element={<SystemUsers />} />
                   <Route path="/students" element={<Students />} />
                   <Route path="/help-support" element={<HelpSupport />} />
-                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings" element={<React.Suspense fallback={<div className="p-6">Loading...</div>}><AccountSettingsRoute /></React.Suspense>} />
+                  <Route path="/account/settings" element={<React.Suspense fallback={<div className="p-6">Loading...</div>}><AccountSettingsRoute /></React.Suspense>} />
                   <Route path="/learning-path" element={<LearningPath />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/learning-history" element={<React.Suspense fallback={<div className="p-6">Loading...</div>}><LearningHistory /></React.Suspense>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </StudentRouteGuard>
@@ -75,3 +79,4 @@ function App() {
 }
 
 export default App;
+

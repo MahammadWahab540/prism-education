@@ -49,6 +49,7 @@ import {
   GraduationCap,
   Eye
 } from 'lucide-react';
+import { useProfilePanel } from '@/contexts/ProfilePanelContext';
 
 const chartConfig = {
   revenue: {
@@ -70,6 +71,7 @@ const chartConfig = {
 };
 
 export function TenantAnalyticsDashboard() {
+  const { openPanel } = useProfilePanel();
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedTenant, setSelectedTenant] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
@@ -319,6 +321,7 @@ export function TenantAnalyticsDashboard() {
           trend="up"
           icon={Users}
           animationType="progress"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Course Completions"
@@ -327,6 +330,7 @@ export function TenantAnalyticsDashboard() {
           trend="up"
           icon={Award}
           animationType="wave"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Avg Engagement"
@@ -335,6 +339,7 @@ export function TenantAnalyticsDashboard() {
           trend="up"
           icon={Activity}
           animationType="geometric"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Active Learners"
@@ -343,6 +348,7 @@ export function TenantAnalyticsDashboard() {
           trend="up"
           icon={TrendingUp}
           animationType="pulse"
+          onOpenProfile={() => openPanel('overview')}
         />
       </div>
 

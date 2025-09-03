@@ -54,6 +54,7 @@ import {
   MessageSquare,
   Search
 } from 'lucide-react';
+import { useProfilePanel } from '@/contexts/ProfilePanelContext';
 
 const chartConfig = {
   revenue: {
@@ -75,6 +76,7 @@ const chartConfig = {
 };
 
 export function TenantReportsDashboard() {
+  const { openPanel } = useProfilePanel();
   const [timeRange, setTimeRange] = useState('12m');
   const [reportType, setReportType] = useState('student-overview');
   const [activeTab, setActiveTab] = useState('overview');
@@ -519,6 +521,7 @@ export function TenantReportsDashboard() {
           trend="up"
           icon={Users}
           animationType="progress"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Active Learners"
@@ -527,6 +530,7 @@ export function TenantReportsDashboard() {
           trend="up"
           icon={BookOpen}
           animationType="wave"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Avg Completion"
@@ -535,6 +539,7 @@ export function TenantReportsDashboard() {
           trend="up"
           icon={Trophy}
           animationType="geometric"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Engagement Score"
@@ -543,6 +548,7 @@ export function TenantReportsDashboard() {
           trend="up"
           icon={Activity}
           animationType="pulse"
+          onOpenProfile={() => openPanel('overview')}
         />
       </div>
 

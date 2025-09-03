@@ -55,6 +55,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfilePanel } from '@/contexts/ProfilePanelContext';
 
 const chartConfig = {
   users: {
@@ -77,6 +78,7 @@ const chartConfig = {
 
 export function AnalyticsDashboard() {
   const { user } = useAuth();
+  const { openPanel } = useProfilePanel();
   const isPlatformOwner = user?.role === 'platform_owner';
   
   const [timeRange, setTimeRange] = useState('7d');
@@ -487,6 +489,7 @@ export function AnalyticsDashboard() {
           trend="up"
           icon={Users}
           animationType="progress"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Active Learners"
@@ -495,6 +498,7 @@ export function AnalyticsDashboard() {
           trend="up"
           icon={Activity}
           animationType="wave"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Skill Completions"
@@ -503,6 +507,7 @@ export function AnalyticsDashboard() {
           trend="up"
           icon={Award}
           animationType="geometric"
+          onOpenProfile={() => openPanel('overview')}
         />
         <AnimatedKpiCard
           label="Avg. Engagement"
@@ -511,6 +516,7 @@ export function AnalyticsDashboard() {
           trend="up"
           icon={Clock}
           animationType="pulse"
+          onOpenProfile={() => openPanel('overview')}
         />
       </div>
 

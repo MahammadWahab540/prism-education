@@ -18,8 +18,10 @@ import {
   BookOpen,
   BarChart3
 } from 'lucide-react';
+import { useProfilePanel } from '@/contexts/ProfilePanelContext';
 
 export function PlatformOwnerDashboard() {
+  const { openPanel } = useProfilePanel();
   const stats = [
     { 
       label: 'Total Tenants', 
@@ -107,6 +109,7 @@ export function PlatformOwnerDashboard() {
             trend={stat.trend}
             icon={stat.icon}
             animationType={stat.animationType}
+            onOpenProfile={() => openPanel('overview')}
           />
         ))}
       </div>

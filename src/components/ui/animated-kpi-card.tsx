@@ -14,6 +14,7 @@ interface AnimatedKpiCardProps {
   icon: LucideIcon
   className?: string
   animationType?: 'progress' | 'pulse' | 'wave' | 'geometric'
+  onOpenProfile?: (payload?: { section?: string }) => void
 }
 
 const ProgressVisual: React.FC<{ progress: number; hovered: boolean }> = ({ progress, hovered }) => {
@@ -138,7 +139,8 @@ export function AnimatedKpiCard({
   trend = 'up', 
   icon: Icon, 
   className,
-  animationType = 'progress'
+  animationType = 'progress',
+  onOpenProfile
 }: AnimatedKpiCardProps) {
   const [hovered, setHovered] = useState(false)
   const [progress] = useState(Math.floor(Math.random() * 40) + 60) // Random progress between 60-100
@@ -166,6 +168,7 @@ export function AnimatedKpiCard({
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => onOpenProfile?.({ section: 'overview' })}
     >
       {/* Animated Background */}
       {renderAnimation()}

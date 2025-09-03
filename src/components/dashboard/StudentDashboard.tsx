@@ -20,12 +20,13 @@ import {
   Award,
   TrendingUp
 } from 'lucide-react';
-import { RightProfilePanel } from './RightProfilePanel';
+import { useProfilePanel } from '@/contexts/ProfilePanelContext';
 import { useUpcomingDeadlines } from '@/hooks/useUpcomingDeadlines';
 
 export function StudentDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { openPanel } = useProfilePanel();
   const [showWelcome, setShowWelcome] = useState(false);
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
@@ -182,17 +183,18 @@ export function StudentDashboard() {
           </div>
 
           {/* Animated Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">{
+            stats.map((stat) => (
               <AnimatedKpiCard
                 key={stat.label}
                 label={stat.label}
                 value={stat.value}
                 icon={stat.icon}
                 animationType={stat.animationType}
+                onOpenProfile={() => openPanel(stat.label === 'Hours Learned' ? 'learningHistory' : 'overview')}
               />
-            ))}
-          </div>
+            ))
+          }</div>
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Continue Learning */}
@@ -290,8 +292,7 @@ export function StudentDashboard() {
           </div>
         </div>
 
-        {/* Right Profile Panel */}
-        <RightProfilePanel />
+        {/* Profile panel now opens as overlay drawer */}
       </div>
     </>
   );

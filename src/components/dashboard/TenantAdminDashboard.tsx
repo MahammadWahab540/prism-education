@@ -14,8 +14,10 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import { useProfilePanel } from '@/contexts/ProfilePanelContext';
 
 export function TenantAdminDashboard() {
+  const { openPanel } = useProfilePanel();
   const stats = [
     { 
       label: 'Active Courses', 
@@ -115,6 +117,7 @@ export function TenantAdminDashboard() {
             change={stat.change}
             icon={stat.icon}
             animationType={stat.animationType}
+            onOpenProfile={() => openPanel('overview')}
           />
         ))}
       </div>
