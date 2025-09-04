@@ -42,7 +42,7 @@ export function ProfileCard({ data }: ProfileCardProps) {
             transition={{ duration: 0.2 }}
           >
             <Avatar className="w-16 h-16 border-2 border-gradient-to-br from-orange-400 to-indigo-500">
-              <AvatarImage src={data.user.avatar} alt={data.user.name} />
+              <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" alt={data.user.name} />
               <AvatarFallback className="bg-gradient-to-br from-orange-400 to-indigo-500 text-white font-semibold">
                 {data.user.name.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
