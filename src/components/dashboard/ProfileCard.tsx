@@ -41,7 +41,7 @@ export function ProfileCard({ data }: ProfileCardProps) {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <Avatar size="xl" className="border-2 border-gradient-to-br from-orange-400 to-indigo-500" tooltip={`${data.user.name} - ${data.user.role}`}>
+            <Avatar className="w-16 h-16 border-2 border-gradient-to-br from-orange-400 to-indigo-500">
               <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" alt={data.user.name} />
               <AvatarFallback className="bg-gradient-to-br from-orange-400 to-indigo-500 text-white font-semibold">
                 {data.user.name.split(' ').map(n => n[0]).join('')}
