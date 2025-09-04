@@ -181,8 +181,8 @@ export function Profile() {
 
               {/* Profile Info Overlay */}
               <div className="absolute bottom-6 left-6 right-6 text-white">
-                <div className="flex items-end gap-6">
-                  <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                  <div className="flex items-end gap-6">
+                  <Avatar size="2xl" className="border-4 border-white shadow-lg" tooltip={`${profile.name} - ${profile.role}`}>
                     <AvatarImage src={profile.avatar} alt={profile.name} />
                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                       {profile.name.split(' ').map(n => n[0]).join('')}

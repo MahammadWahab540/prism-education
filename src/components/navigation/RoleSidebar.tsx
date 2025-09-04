@@ -167,7 +167,7 @@ export function RoleSidebar() {
                       size="sm"
                       className="flex w-fit items-center gap-2 px-2"
                     >
-                      <Avatar className="rounded size-4">
+                      <Avatar size="xs" className="rounded">
                         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                           {organizationName.charAt(0)}
                         </AvatarFallback>
@@ -279,7 +279,7 @@ export function RoleSidebar() {
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="w-full">
                       <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                        <Avatar className="size-4">
+                        <Avatar size="xs">
                           <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" alt={user.name} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             {user.name?.charAt(0)}
@@ -300,7 +300,7 @@ export function RoleSidebar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent sideOffset={5} className="bg-card-glass backdrop-blur-md">
                       <div className="flex flex-row items-center gap-2 p-2">
-                        <Avatar className="size-6">
+                        <Avatar size="sm">
                           <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" alt={user.name} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {user.name?.charAt(0)}
