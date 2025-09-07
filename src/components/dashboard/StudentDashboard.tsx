@@ -279,7 +279,7 @@ export function StudentDashboard() {
                     {upcomingDeadlines.map((deadline, index) => (
                       <div key={index} className={`p-3 rounded-lg ${deadline.urgent ? 'bg-accent-warning/10 border border-accent-warning/20' : 'bg-white/20'} backdrop-blur-sm`}>
                         <p className="text-sm font-medium">{deadline.title}</p>
-                        <p className="text-xs text-muted-foreground">{deadline.course ?? deadline.skillName}</p>
+                        <p className="text-xs text-muted-foreground">{deadline.skillName}</p>
                         <p className={`text-xs mt-1 ${deadline.urgent ? 'text-accent-warning font-medium' : 'text-muted-foreground'}`}>
                           Due {deadline.dueDate ?? `${deadline.estimatedHours}h estimated`}
                         </p>
