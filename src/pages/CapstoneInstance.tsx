@@ -23,12 +23,16 @@ const CapstoneInstancePage = () => {
   const progress = getInstanceProgressPercent(instanceId!);
   const doneMap = state.instanceProgress[instanceId!]?.stages ? Object.fromEntries(Object.entries(state.instanceProgress[instanceId!].stages).map(([k,v]) => [k, v.done])) : undefined;
 
+  // Check if user is trying to access a non-existent instance but we have a demo instance
   useEffect(() => {
-    if (instance && !instance.roadmap) {
-      const tpl = state.templates.find(t => t.id === instance.templateId);
-      if (tpl) generateInstanceRoadmap(instance.id, tpl);
+    if (!instance && instanceId && instanceId !== 'demo-instance-123') {
+      const demoInstance = state.instances.find(i => i.id === 'demo-instance-123');
+      if (demoInstance && user?.id === 'demo-user') {
+        // Redirect to demo instance if user is trying to access a non-existent instance
+        navigate('/capstone-instance/demo-instance-123', { replace: true });
+      }
     }
-  }, [instance?.id]);
+  }, [instance, instanceId, state.instances, user?.id, navigate]);
 
   const [openStageId, setOpenStageId] = useState<string | null>(null);
 
@@ -81,8 +85,19 @@ const CapstoneInstancePage = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
-            <div className="text-muted-foreground">No active capstone instance found.</div>
-            <Button onClick={() => navigate('/capstone')}>Browse Capstones</Button>
+            <div className="text-muted-foreground">
+              Capstone instance not found (ID: {instanceId}).
+            </div>
+            <div className="text-sm text-muted-foreground">
+              This might happen if the instance was deleted or if you're using an old link.
+            </div>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => navigate('/capstone-instance/demo-instance-123')}>
+                Try Demo Instance
+              </Button>
+              <Button onClick={() => navigate('/roadmap')}>Back to Roadmap</Button>
+              <Button variant="outline" onClick={() => navigate('/capstone')}>Browse Capstones</Button>
+            </div>
           </div>
         </div>
       </DashboardLayout>

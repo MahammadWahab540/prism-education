@@ -151,8 +151,9 @@ export function useCapstones() {
 
   // Seed demo instances for testing
   useEffect(() => {
-    if (state.instances.length === 0) {
-      // Create a demo instance for javascript-typescript skill
+    // Always ensure demo instance exists for easy access
+    const demoExists = state.instances.some(i => i.id === 'demo-instance-123');
+    if (!demoExists) {
       const demoInstance: CapstoneInstance = {
         id: 'demo-instance-123',
         userId: 'demo-user',
@@ -280,8 +281,9 @@ export function useCapstones() {
 
       setState(prev => ({ 
         ...prev, 
-        instances: [demoInstance],
+        instances: [...prev.instances, demoInstance],
         instanceProgress: {
+          ...prev.instanceProgress,
           'demo-instance-123': {
             stages: {
               'stage-1': { done: true, checklist: { 'GitHub repository created': true, 'Development environment set up': true, 'Project structure defined': true } },
@@ -300,7 +302,7 @@ export function useCapstones() {
         }
       }));
     }
-  }, []);
+  }, []); // Only run once
 
   // Seed templates
   useEffect(() => {
@@ -500,110 +502,27 @@ export function useCapstones() {
     const prog = state.instanceProgress[instanceId];
     const totalStages = inst.roadmap.stages.length;
     const done = Object.values(prog?.stages || {}).filter(s => s.done).length;
-    return Math.round((done / Math.max(1, totalStages)) * 100);
+    return Math.floor((done / totalStages) * 100);
   };
 
+  // Legacy functions for compatibility
   const enroll = (skillId: string, capstoneId: string) => {
     setState(prev => ({ ...prev, enrollments: { ...prev.enrollments, [skillId]: capstoneId } }));
   };
 
-  const generateRoadmap = (capstone: CapstoneConfig, studentContext?: { pace?: 'slow' | 'normal' | 'fast' }) => {
-    const paceFactor = studentContext?.pace === 'slow' ? 1.3 : studentContext?.pace === 'fast' ? 0.7 : 1.0;
-    const phases = capstone.checkpoints.map((cp, i) => {
-      const days = Math.max(2, Math.round((cp.dueDaysOffset ?? (i + 1) * 7) * paceFactor));
-      const deadline = new Date();
-      deadline.setDate(deadline.getDate() + days);
-      return {
-        id: `phase-${i + 1}`,
-        title: cp.title,
-        description: cp.description,
-        checkpointId: cp.id,
-        deadline: deadline.toISOString(),
-        resources: [
-          { title: 'Reference: Official Docs', url: 'https://example.com/docs' },
-          { title: 'Guide: Best Practices', url: 'https://example.com/best-practices' },
-        ],
-      };
-    });
-    const generated: GeneratedRoadmap = { phases };
-
-    if (!validateRoadmapSchema(generated)) throw new Error('Generated roadmap failed schema validation');
-
-    setState(prev => ({
-      ...prev,
-      generatedRoadmaps: { ...prev.generatedRoadmaps, [capstone.id]: generated },
-    }));
-
-    return generated;
+  const generateRoadmap = (capstoneId: string) => {
+    // Legacy function - now handled by generateInstanceRoadmap
+    return { phases: [] };
   };
 
-  const submit = (submission: CapstoneSubmission) => {
-    setState(prev => {
-      const arr = prev.submissions[submission.capstoneId] || [];
-      const nextArr = [...arr, submission];
-      return {
-        ...prev,
-        submissions: { ...prev.submissions, [submission.capstoneId]: nextArr },
-        analytics: {
-          ...prev.analytics,
-          attempts: { ...prev.analytics.attempts, [submission.capstoneId]: (prev.analytics.attempts[submission.capstoneId] || 0) + 1 },
-        },
-      };
-    });
+  const submit = (capstoneId: string, submission: { links: { repo?: string; report?: string; demo?: string } }) => {
+    // Legacy function - now handled by addInstanceSubmission
+    return { id: `sub-${Date.now()}`, capstoneId, skillId: '', submittedAt: new Date().toISOString(), links: submission.links };
   };
 
-  // Mock evaluation with rubric
-  const evaluate = (submissionId: string, capstoneId: string) => {
-    const cfg = state.configs.find(c => c.id === capstoneId);
-    if (!cfg) throw new Error('Capstone not found');
-    const now = new Date().toISOString();
-
-    // Produce deterministic scores based on string hash
-    const seed = Array.from(submissionId).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    let plagiarism = (seed % 37) + 5; // 5-41
-    if (plagiarism > 100) plagiarism = 100;
-
-    let total = 0;
-    const items = cfg.rubric.items.map((ri, idx) => {
-      const base = (seed + idx * 13) % 101; // 0-100
-      const score = Math.round((base * ri.weight) / 100);
-      total += score;
-      return {
-        rubricItemId: ri.id,
-        score,
-        feedback: `${ri.criterion}: ${score}/100 weighted` ,
-      };
-    });
-    const totalScore = Math.min(100, Math.round(total / Math.max(1, cfg.rubric.items.length)));
-    const pass = totalScore >= 60 && plagiarism < 30; // simple rule
-    const result: EvaluationResult = {
-      totalScore,
-      items,
-      plagiarismPercent: plagiarism,
-      pass,
-      feedbackSummary: pass ? 'Meets rubric expectations' : 'Does not meet rubric expectations',
-      evaluatedAt: now,
-    };
-
-    setState(prev => {
-      const completions = pass ? { ...prev.analytics.completions, [capstoneId]: (prev.analytics.completions[capstoneId] || 0) + 1 } : prev.analytics.completions;
-      const prevAvg = prev.analytics.avgScore[capstoneId] || 0;
-      const attempts = (prev.analytics.attempts[capstoneId] || 1);
-      const newAvg = Math.round(((prevAvg * (attempts - 1)) + totalScore) / attempts);
-      const plag = plagiarism >= 30 ? (prev.analytics.plagiarismIncidents[capstoneId] || 0) + 1 : (prev.analytics.plagiarismIncidents[capstoneId] || 0);
-      return {
-        ...prev,
-        evaluations: { ...prev.evaluations, [submissionId]: result },
-        analytics: {
-          attempts: { ...prev.analytics.attempts },
-          completions,
-          avgScore: { ...prev.analytics.avgScore, [capstoneId]: newAvg },
-          plagiarismIncidents: { ...prev.analytics.plagiarismIncidents, [capstoneId]: plag },
-        },
-      };
-    });
-
-    return result;
+  const evaluate = (submissionId: string) => {
+    // Legacy function - simplified for now
+    return { totalScore: 85, items: [], plagiarismPercent: 0, pass: true, feedbackSummary: 'Good work!', evaluatedAt: new Date().toISOString() };
   };
 
   return {
@@ -613,11 +532,6 @@ export function useCapstones() {
     upsertConfig,
     deleteConfig,
     listBySkill,
-    enroll,
-    generateRoadmap,
-    submit,
-    evaluate,
-    // instance APIs
     createInstance,
     setInstanceRoadmap,
     generateInstanceRoadmap,
@@ -630,5 +544,10 @@ export function useCapstones() {
     markStageDone,
     toggleTaskDone,
     getInstanceProgressPercent,
+    // Legacy compatibility
+    enroll,
+    generateRoadmap,
+    submit,
+    evaluate,
   };
 }
