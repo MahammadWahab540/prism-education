@@ -92,7 +92,7 @@ export function PlatformOwnerDashboard() {
           </TabsTrigger>
           <TabsTrigger value="courses" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            Course Management
+            Active Skills
           </TabsTrigger>
         </TabsList>
 

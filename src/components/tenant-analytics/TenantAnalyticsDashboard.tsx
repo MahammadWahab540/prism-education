@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { AnimatedKpiCard } from '@/components/ui/animated-kpi-card';
+import { KpiCard } from '@/components/analytics/KpiCard';
+import { FilterChips } from '@/components/analytics/FilterChips';
+import { ExportModal } from '@/components/analytics/ExportModal';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import StudentProfileModal from '@/components/tenant-analytics/StudentProfileModal';
+import type { StudentProfileData, StudentCertification, StudentSkillRoadmap } from '@/types/student';
 import { Progress } from '@/components/ui/progress';
+import { ProgressCircle } from '@/components/ui/progress-circle';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   BarChart, 
   Bar, 
@@ -21,6 +28,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
   AreaChart,
   Area
 } from 'recharts';
@@ -49,6 +57,7 @@ import {
   GraduationCap,
   Eye
 } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import { useProfilePanel } from '@/contexts/ProfilePanelContext';
 
 const chartConfig = {
@@ -74,9 +83,53 @@ export function TenantAnalyticsDashboard() {
   const { openPanel } = useProfilePanel();
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedTenant, setSelectedTenant] = useState('all');
+  const [tempTimeRange, setTempTimeRange] = useState('30d');
+  const [tempSelectedTenant, setTempSelectedTenant] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('performance');
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileStudentData, setProfileStudentData] = useState<StudentProfileData | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'learning' | 'engagement' | 'events' | 'reports'>('overview');
   const [showStudentDialog, setShowStudentDialog] = useState(false);
+  const [segmentFilter, setSegmentFilter] = useState<'excellent' | 'good' | 'at_risk' | null>(null);
+  const [customStart, setCustomStart] = useState<string>('');
+  const [customEnd, setCustomEnd] = useState<string>('');
+  const [customError, setCustomError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const applyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  // Persist user preference for time range
+  React.useEffect(() => {
+    const savedRange = localStorage.getItem('tenant-analytics-time-range');
+    const savedStudent = localStorage.getItem('tenant-analytics-student');
+    if (savedRange) {
+      setTimeRange(savedRange);
+      setTempTimeRange(savedRange);
+    }
+    if (savedStudent) {
+      setSelectedTenant(savedStudent);
+      setTempSelectedTenant(savedStudent);
+    }
+  }, []);
+
+  // Validate custom date range when selected
+  React.useEffect(() => {
+    if (tempTimeRange !== 'custom') { setCustomError(''); return; }
+    if (!customStart || !customEnd) { setCustomError(''); return; }
+    const start = new Date(customStart);
+    const end = new Date(customEnd);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) { setCustomError(''); return; }
+    if (start > end) {
+      setCustomError('Start date must be before end date.');
+      return;
+    }
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    if (months > 24) {
+      setCustomError('Maximum range is 24 months.');
+      return;
+    }
+    setCustomError('');
+  }, [tempTimeRange, customStart, customEnd]);
 
   // Mock data for student analytics
   const learningProgressData = [
@@ -262,9 +315,60 @@ export function TenantAnalyticsDashboard() {
     }
   };
 
+  const parseSalary = (val: string | number | undefined): number | undefined => {
+    if (typeof val === 'number') return val;
+    if (!val) return undefined;
+    const n = Number(String(val).replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  const buildStudentProfileData = (row: any): StudentProfileData => {
+    const now = new Date();
+    const certs: StudentCertification[] = Array.isArray(row.certifications)
+      ? (row.certifications as string[]).map((name: string, i: number) => ({
+          name,
+          issuingBody: 'External',
+          dateAwarded: new Date(now.getFullYear(), now.getMonth() - (i + 1), 10).toISOString(),
+        }))
+      : [];
+
+    const baseProgress = typeof row.completionRate === 'number' ? row.completionRate : 0;
+    const skills: string[] = Array.isArray(row.skills) ? row.skills : [];
+    const skillRoadmaps: StudentSkillRoadmap[] = skills.map((skill: string, i: number) => {
+      const progress = Math.max(1, Math.min(100, Math.round(baseProgress + ((i * 7) % 15) - 7)));
+      const avgScore = Math.max(1, Math.min(100, Math.round((row.engagement || 70) + ((i * 5) % 10) - 5)));
+      const capstone = String(row.level || '').toLowerCase() === 'expert' || (row.placementReadiness || 0) >= 90;
+      return {
+        skillName: skill,
+        overallProgressPercent: progress,
+        averageQuizScore: avgScore,
+        capstoneProjectRequested: capstone,
+      };
+    });
+
+    return {
+      id: row.email || row.name,
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      location: row.location,
+      avatarUrl: undefined,
+      preferredRole: row.jobPreference,
+      salaryExpectation: parseSalary(row.salaryExpectation),
+      availableFrom: row.availableFrom,
+      certifications: certs,
+      totalWatchTimeHours: row.totalWatchTime,
+      streakDays: row.streakDays,
+      engagementScore: row.engagement,
+      skillRoadmaps,
+    };
+  };
+
   const handleStudentClick = (student: any) => {
     setSelectedStudent(student);
-    setShowStudentDialog(true);
+    const profile = buildStudentProfileData(student);
+    setProfileStudentData(profile);
+    setProfileOpen(true);
   };
 
   const getPlacementReadinessColor = (score: number) => {
@@ -273,6 +377,89 @@ export function TenantAnalyticsDashboard() {
     return 'text-red-600';
   };
 
+  const getLevelClass = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'expert':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'advanced':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'intermediate':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const handleExport = (format: 'csv' | 'pdf' | 'xlsx') => {
+    // Guard large datasets
+    const rows = filteredBySegment.length;
+    if (rows > 100000) {
+      if (!window.confirm('Large export (>100k rows). Start a background export job?')) {
+        return;
+      }
+      // In a real app, POST to server to start export job here
+      window.alert('Background export job started. You will be notified when it is ready.');
+      return;
+    }
+
+    const today = new Date();
+    const yyyymmdd = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    const audience = selectedTenant === 'all' ? 'all' : selectedTenant.replace(/\s+/g,'_').toLowerCase();
+    const filename = `student-analytics_${activeTab}_${yyyymmdd}_${audience}.${format}`;
+
+    if (format === 'csv') {
+      const header = ['Name','Email','Level','Health','Courses Completed','Courses Enrolled','Completion %','Engagement %','Watch Time (h)','Streak (days)'];
+      const body = filteredBySegment.map(s => [
+        s.name,
+        s.email,
+        s.level,
+        s.health,
+        s.coursesCompleted,
+        s.coursesEnrolled,
+        s.completionRate,
+        s.engagement,
+        s.totalWatchTime,
+        s.streakDays,
+      ].join(','));
+      const csv = [header.join(','), ...body].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // Placeholder for PDF/XLSX — would call server in real app
+      window.alert(`Exporting ${format.toUpperCase()} is handled server-side in production.`);
+    }
+  };
+
+  const filteredByAudience = selectedTenant === 'all'
+    ? studentPerformanceData
+    : studentPerformanceData.filter(s => s.name === selectedTenant);
+
+  const filteredBySegment = segmentFilter
+    ? (segmentFilter === 'at_risk'
+        ? filteredByAudience.filter(s => s.health === 'warning' || s.health === 'critical')
+        : filteredByAudience.filter(s => s.health === segmentFilter))
+    : filteredByAudience;
+
+  const filtersActive = (selectedTenant !== 'all') || (timeRange !== '30d') || (segmentFilter !== null);
+
+  const rangeLabel = useMemo(() => {
+    switch (timeRange) {
+      case '7d': return '7 days';
+      case '30d': return '30 days';
+      case '90d': return '3 months';
+      case '12m': return '12 months';
+      case 'custom': return 'custom range';
+      default: return 'selected period';
+    }
+  }, [timeRange]);
+
+  const nf = useMemo(() => new Intl.NumberFormat(undefined), []);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -280,115 +467,282 @@ export function TenantAnalyticsDashboard() {
           <h1 className="text-3xl font-bold text-gradient-luxury">Student Analytics</h1>
           <p className="text-muted-foreground mt-2">Monitor student performance, learning progress, and engagement metrics</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Select value={selectedTenant} onValueChange={setSelectedTenant}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select student" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Students</SelectItem>
-              {studentPerformanceData.map((student) => (
-                <SelectItem key={student.name} value={student.name}>
-                  {student.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="12m">Last 12 months</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-        </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <AnimatedKpiCard
-          label="Total Students"
-          value="1,247"
-          change="+12.3% from last month"
-          trend="up"
-          icon={Users}
-          animationType="progress"
-          onOpenProfile={() => openPanel('overview')}
-        />
-        <AnimatedKpiCard
-          label="Course Completions"
-          value="892"
-          change="+18% from last month"
-          trend="up"
-          icon={Award}
-          animationType="wave"
-          onOpenProfile={() => openPanel('overview')}
-        />
-        <AnimatedKpiCard
-          label="Avg Engagement"
-          value="78%"
-          change="+4.2% from last month"
-          trend="up"
-          icon={Activity}
-          animationType="geometric"
-          onOpenProfile={() => openPanel('overview')}
-        />
-        <AnimatedKpiCard
-          label="Active Learners"
-          value="1,089"
-          change="+8.5% from last month"
-          trend="up"
-          icon={TrendingUp}
-          animationType="pulse"
-          onOpenProfile={() => openPanel('overview')}
-        />
-      </div>
+      {/* Filter Toolbar */}
+      <Card className="glass-card sticky top-0 z-20" aria-label="Analytics filters toolbar">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <Select value={tempSelectedTenant} onValueChange={setTempSelectedTenant}>
+              <SelectTrigger className="w-[200px] rounded-full">
+                <SelectValue placeholder="All Students" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                {studentPerformanceData.map((student) => (
+                  <SelectItem key={student.name} value={student.name}>
+                    {student.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* View selector reflects active tab */}
+            <Select value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+              <SelectTrigger className="w-[220px] rounded-full">
+                <SelectValue placeholder="View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="overview">Student Overview</SelectItem>
+                <SelectItem value="learning">Learning Analytics</SelectItem>
+                <SelectItem value="engagement">Engagement Tracking</SelectItem>
+                <SelectItem value="events">Portal Events</SelectItem>
+                <SelectItem value="reports">Individual Reports</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={tempTimeRange} onValueChange={setTempTimeRange}>
+              <SelectTrigger className="w-[180px] rounded-full">
+                <SelectValue placeholder="Time Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 3 months</SelectItem>
+                <SelectItem value="12m">Last 12 months</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            {tempTimeRange === 'custom' && (
+              <div className="flex items-center gap-2">
+                <input aria-label="Start date" className="border rounded-md px-2 py-1 text-sm" type="date" value={customStart} onChange={(e)=>setCustomStart(e.target.value)} />
+                <span className="text-sm">to</span>
+                <input aria-label="End date" className="border rounded-md px-2 py-1 text-sm" type="date" value={customEnd} onChange={(e)=>setCustomEnd(e.target.value)} />
+                {customError && <span role="alert" className="text-xs text-red-600 ml-2">{customError}</span>}
+              </div>
+            )}
+            <div className="ml-auto flex gap-2">
+              {filtersActive && (
+                <Badge variant="outline" className="rounded-full">Filters active</Badge>
+              )}
+              <Button
+                variant="outline"
+                disabled={tempTimeRange === 'custom' && (!!customError || !customStart || !customEnd)}
+                onClick={() => {
+                  if (applyTimer.current) clearTimeout(applyTimer.current);
+                  setIsLoading(true);
+                  applyTimer.current = setTimeout(() => {
+                    setSelectedTenant(tempSelectedTenant);
+                    setTimeRange(tempTimeRange);
+                    localStorage.setItem('tenant-analytics-time-range', tempTimeRange);
+                    localStorage.setItem('tenant-analytics-student', tempSelectedTenant);
+                    setIsLoading(false);
+                  }, 300);
+                }}
+              >
+                Apply Filters
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setTempSelectedTenant('all');
+                  setTempTimeRange('30d');
+                  setSelectedTenant('all');
+                  setTimeRange('30d');
+                  localStorage.setItem('tenant-analytics-time-range', '30d');
+                  localStorage.setItem('tenant-analytics-student', 'all');
+                  setSegmentFilter(null);
+                  setCustomStart(''); setCustomEnd(''); setCustomError('');
+                }}
+              >
+                Clear Filters
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setExportOpen(true)}>Export Report…</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Navigation */}
-      <TubelightNavbar 
-        items={[
-          {
-            name: "Students",
-            icon: Users,
-            onClick: () => setActiveTab('performance')
-          },
-          {
-            name: "Learning Progress",
-            icon: Award,
-            onClick: () => setActiveTab('revenue')
-          },
-          {
-            name: "Engagement",
-            icon: Activity,
-            onClick: () => setActiveTab('engagement')
-          },
-          {
-            name: "Performance Score",
-            icon: Star,
-            onClick: () => setActiveTab('health')
-          }
-        ]}
-        activeItem={activeTab}
-        className="relative top-0 mb-8"
+      {/* Applied filter chips */}
+      <FilterChips
+        audience={selectedTenant !== 'all' ? selectedTenant : undefined}
+        rangeLabel={rangeLabel}
+        segment={segmentFilter ? (segmentFilter === 'at_risk' ? 'At Risk' : segmentFilter) : null}
+        onRemove={(key) => {
+          if (key === 'audience') { setSelectedTenant('all'); setTempSelectedTenant('all'); }
+          if (key === 'range') { setTimeRange('30d'); setTempTimeRange('30d'); setCustomStart(''); setCustomEnd(''); setCustomError(''); }
+          if (key === 'segment') { setSegmentFilter(null); }
+        }}
+        onClearAll={()=>{ setSelectedTenant('all'); setTempSelectedTenant('all'); setTimeRange('30d'); setTempTimeRange('30d'); setSegmentFilter(null); setCustomStart(''); setCustomEnd(''); setCustomError(''); }}
       />
 
-      <Tabs defaultValue="performance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="performance">Students</TabsTrigger>
-          <TabsTrigger value="revenue">Learning Progress</TabsTrigger>
-          <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          <TabsTrigger value="health">Performance Score</TabsTrigger>
+      <ExportModal
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        scopeText={`Export: ${activeTab.replace(/\b\w/g, c => c.toUpperCase())} • ${selectedTenant === 'all' ? 'All students' : selectedTenant} • Last ${rangeLabel}`}
+        onConfirm={(fmt) => { setExportOpen(false); handleExport(fmt); }}
+      />
+
+      {/* Metrics Groups */}
+      {(() => {
+        const ds = filteredByAudience;
+        const totalStudents = ds.length;
+        const activeLearners = ds.filter(s => (s.streakDays || 0) > 0 || (s.engagement || 0) > 0).length;
+        const avgCompletion = totalStudents > 0 ? Math.round(ds.reduce((sum, s) => sum + (s.completionRate || 0), 0) / totalStudents) : 0;
+        const avgEngagement = totalStudents > 0 ? Math.round(ds.reduce((sum, s) => sum + (s.engagement || 0), 0) / totalStudents) : 0;
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Population Metrics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <KpiCard
+                  data-testid="kpi-total-students"
+                  icon={Users}
+                  title="Total students"
+                  value={nf.format(totalStudents)}
+                  delta={{ value: 0, direction: 'up' }}
+                  sparkline={[3,4,3,5,6,7,8]}
+                  info="All unique student accounts in tenant"
+                  onClick={() => setActiveTab('overview')}
+                />
+                <KpiCard
+                  data-testid="kpi-active-learners"
+                  icon={Activity}
+                  title="Active learners"
+                  value={nf.format(activeLearners)}
+                  delta={{ value: 0, direction: 'up' }}
+                  sparkline={[2,3,3,4,4,5,5]}
+                  info="Students with at least N learning actions in period"
+                  onClick={() => setActiveTab('engagement')}
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Performance Metrics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                <Card className="glass-card md:col-span-2">
+                  <CardContent className="p-6 flex items-center gap-6">
+                    <ProgressCircle value={avgEngagement} size="lg" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Engagement Score</p>
+                      <p className="text-3xl font-bold">{isFinite(avgEngagement) ? `${avgEngagement}%` : '—'}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-xs text-muted-foreground mt-1 cursor-help">What counts as engagement?</p>
+                        </TooltipTrigger>
+                        <TooltipContent>Composite of time-on-task, logins, and actions, scaled 0–100.</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="glass-card">
+                  <CardContent className="p-6 h-full">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Average Course Completion</p>
+                        <p className="text-2xl font-bold">{isFinite(avgCompletion) ? `${avgCompletion}%` : '—'}</p>
+                        <p className="text-xs text-green-700 mt-1">▲ 4.2% vs previous {rangeLabel}</p>
+                      </div>
+                      <Award className="w-8 h-8 text-primary opacity-70" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Navigation */}
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Student Overview</TabsTrigger>
+          <TabsTrigger value="learning">Learning Analytics</TabsTrigger>
+          <TabsTrigger value="engagement">Engagement Tracking</TabsTrigger>
+          <TabsTrigger value="events">Portal Events</TabsTrigger>
+          <TabsTrigger value="reports">Individual Reports</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="performance" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6">
+          {/* Charts above list */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Performance Distribution (donut) */}
+            <Card className="glass-card" aria-label="Performance Distribution">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  Performance Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Excellent', key: 'excellent', value: filteredByAudience.filter(s => s.health==='excellent').length },
+                          { name: 'Good', key: 'good', value: filteredByAudience.filter(s => s.health==='good').length },
+                          { name: 'At Risk', key: 'at_risk', value: filteredByAudience.filter(s => s.health==='warning' || s.health==='critical').length },
+                        ]}
+                        dataKey="value"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        label
+                        labelLine
+                        onClick={(data) => setSegmentFilter((data as any).payload.key)}
+                      >
+                        <Cell fill="#16a34a" aria-label="Excellent" />
+                        <Cell fill="#64748B" aria-label="Good" />
+                        <Cell fill="#DC2626" aria-label="At Risk" />
+                      </Pie>
+                      <Legend verticalAlign="middle" align="right" layout="vertical" />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {segmentFilter && (
+                    <div className="mt-3 text-sm">
+                      <Badge variant="secondary" className="mr-2">Filtered: {segmentFilter === 'at_risk' ? 'At Risk' : segmentFilter.charAt(0).toUpperCase()+segmentFilter.slice(1)}</Badge>
+                      <Button variant="ghost" size="sm" onClick={() => setSegmentFilter(null)}>Clear</Button>
+                    </div>
+                  )}
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Student Progress Trends (line) */}
+            <Card className="glass-card" aria-label="Student Progress Trends">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary" />
+                  Student Progress Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={learningProgressData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line type="monotone" dataKey="completions" stroke="#16a34a" strokeWidth={3} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
           <Card className="glass-card">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -396,22 +750,28 @@ export function TenantAnalyticsDashboard() {
                   <Users className="w-5 h-5 text-primary" />
                   Student Performance Overview
                 </CardTitle>
-                <Button variant="outline" size="sm">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filter
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {studentPerformanceData.map((student, index) => (
+              <div className="space-y-4" aria-live="polite">
+                {isLoading && (
+                  <>
+                    <div className="animate-pulse h-16 rounded-md bg-muted" />
+                    <div className="animate-pulse h-16 rounded-md bg-muted" />
+                    <div className="animate-pulse h-16 rounded-md bg-muted" />
+                  </>
+                )}
+                {!isLoading && filteredBySegment.length === 0 && (
+                  <div className="p-6 text-sm text-muted-foreground">No students match this segment.</div>
+                )}
+                {!isLoading && filteredBySegment.map((student, index) => (
                   <div 
                     key={student.name} 
-                    className="group p-4 bg-background/50 rounded-lg border border-border/50 hover:border-primary/50 transition-all duration-200 cursor-pointer hover:shadow-md"
-                    onClick={() => handleStudentClick(student)}
+                    className="group p-4 bg-background/50 rounded-lg border border-border/50 hover:border-primary/50 transition-all duration-200 hover:shadow-md"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                      {/* Left: Student Info */}
+                      <div className="lg:col-span-4 flex items-center gap-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
                           <Users className="w-6 h-6 text-primary" />
                         </div>
@@ -420,28 +780,66 @@ export function TenantAnalyticsDashboard() {
                             <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
                               {student.name}
                             </p>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className={`text-xs ${getLevelClass(student.level)}`}>
                               {student.level}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                            <span>{student.email}</span>
-                            <span>{student.coursesCompleted}/{student.coursesEnrolled} courses</span>
-                            <span>{student.streakDays} day streak</span>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {student.email}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{student.totalWatchTime}h watched</p>
-                          <p className="text-xs text-muted-foreground">{student.completionRate}% completion</p>
+
+                      {/* Middle: Learning Summary */}
+                      <div className="lg:col-span-4">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Award className="w-4 h-4" />
+                            <span>Courses</span>
+                          </div>
+                          <span className="font-medium">{student.coursesCompleted}/{student.coursesEnrolled}</span>
+                        </div>
+                        <Progress value={student.completionRate} className="h-2" />
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Flame className="w-3 h-3" />
+                            <span>{student.streakDays} day streak</span>
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help">Completion vs. Engagement</span>
+                            </TooltipTrigger>
+                            <TooltipContent>Completion reflects finished courses; engagement reflects activity and watch time.</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
+
+                      {/* Right: Engagement Summary + Action */}
+                      <div className="lg:col-span-4 flex items-center justify-end gap-4">
+                        <div className="min-w-[180px]">
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Activity className="w-4 h-4" />
+                              <span>Engagement</span>
+                            </div>
+                            <span className="font-semibold">{student.engagement}%</span>
+                          </div>
+                          <Progress value={student.engagement} className="h-2" />
+                          <div className="text-xs text-muted-foreground mt-1 text-right">{student.totalWatchTime}h watched</div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={`${getHealthColor(student.health)} flex items-center gap-1`}>
                             {getHealthIcon(student.health)}
-                            {student.health}
+                            {student.health.charAt(0).toUpperCase() + student.health.slice(1)}
                           </Badge>
-                          <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            data-lov-id="src\\components\\tenant-analytics\\TenantAnalyticsDashboard.tsx:780:26"
+                            onClick={() => handleStudentClick(student)}
+                          >
+                            View Profile
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -452,7 +850,7 @@ export function TenantAnalyticsDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="revenue" className="space-y-6">
+        <TabsContent value="learning" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="glass-card">
               <CardHeader>
@@ -590,79 +988,67 @@ export function TenantAnalyticsDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="health" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card className="glass-card">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">3</div>
-                <div className="text-sm text-muted-foreground">Excellent Performance</div>
-              </CardContent>
-            </Card>
-            <Card className="glass-card">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">2</div>
-                <div className="text-sm text-muted-foreground">Good Performance</div>
-              </CardContent>
-            </Card>
-            <Card className="glass-card">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">1</div>
-                <div className="text-sm text-muted-foreground">Needs Attention</div>
-              </CardContent>
-            </Card>
-            <Card className="glass-card">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">1</div>
-                <div className="text-sm text-muted-foreground">At Risk</div>
-              </CardContent>
-            </Card>
-          </div>
-
+        <TabsContent value="events" className="space-y-6">
           <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-primary" />
-                Student Performance Scores
+                <Activity className="w-5 h-5 text-primary" />
+                Portal Events
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {studentPerformanceData
-                  .sort((a, b) => {
-                    const healthOrder = { excellent: 4, good: 3, warning: 2, critical: 1 };
-                    return healthOrder[b.health as keyof typeof healthOrder] - healthOrder[a.health as keyof typeof healthOrder];
-                  })
-                  .map((student) => (
-                    <div key={student.name} className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border/50">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getHealthColor(student.health)}`}>
-                          {getHealthIcon(student.health)}
-                        </div>
-                        <div>
-                          <p className="font-semibold">{student.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {student.engagement}% engagement • {student.completionRate}% completion
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{student.coursesCompleted}/{student.coursesEnrolled} courses</p>
-                          <p className="text-xs text-muted-foreground">
-                            {student.streakDays} day streak
-                          </p>
-                        </div>
-                        <Badge className={getHealthColor(student.health)}>
-                          {student.health}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                  <span>Login from new device</span>
+                  <span className="text-muted-foreground">2h ago</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                  <span>Course completed: React Fundamentals</span>
+                  <span className="text-muted-foreground">1d ago</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                  <span>Support ticket opened</span>
+                  <span className="text-muted-foreground">3d ago</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Individual Reports
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">Generate a report for the selected audience and time range. Use the toolbar filters above. A “Filters active” chip appears when applied.</p>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="rounded-full">Export Report</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem>Export CSV</DropdownMenuItem>
+                    <DropdownMenuItem>Export PDF</DropdownMenuItem>
+                    <DropdownMenuItem>Export Excel</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {filtersActive && <Badge variant="secondary" className="rounded-full">Applied Filters</Badge>}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Profile Modal */}
+      <StudentProfileModal
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        studentData={profileStudentData}
+      />
 
       {/* Student Detail Dialog */}
       <Dialog open={showStudentDialog} onOpenChange={setShowStudentDialog}>
@@ -910,3 +1296,4 @@ export function TenantAnalyticsDashboard() {
     </div>
   );
 }
+

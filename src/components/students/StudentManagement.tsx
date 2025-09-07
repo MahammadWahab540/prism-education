@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { ProgressCircle } from '@/components/ui/progress-circle';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Plus, 
   UserPlus, 
@@ -36,7 +38,6 @@ import {
   Shield
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Student {
@@ -182,13 +183,25 @@ export function StudentManagement() {
 
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isUploadCsvOpen, setIsUploadCsvOpen] = useState(false);
+  const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<Student | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [graduationYearFilter, setGraduationYearFilter] = useState('all');
   const [careerChoiceFilter, setCareerChoiceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  // Temp filter state for Apply/Clear interactions
+  const [tempSearchTerm, setTempSearchTerm] = useState('');
+  const [tempGraduationYear, setTempGraduationYear] = useState('all');
+  const [tempCareerChoice, setTempCareerChoice] = useState('all');
+  const [tempStatus, setTempStatus] = useState('all');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState('students');
+  // Sorting & pagination
+  const [sortKey, setSortKey] = useState<'progress' | 'lastActive' | 'name'>('progress');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [newStudent, setNewStudent] = useState({
     name: '',
     email: '',
@@ -285,6 +298,25 @@ export function StudentManagement() {
     }
   };
 
+  // Engagement level based on progress and recency
+  const getEngagementLevel = (s: Student) => {
+    const daysSinceActive = Math.floor((Date.now() - s.lastActive.getTime()) / (1000 * 60 * 60 * 24));
+    if (s.overallProgress >= 70 || daysSinceActive <= 7) return 'High';
+    if (s.overallProgress >= 40 || daysSinceActive <= 30) return 'Medium';
+    return 'Low';
+  };
+
+  const getEngagementClass = (level: string) => {
+    switch (level) {
+      case 'High':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'Medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-red-100 text-red-800 border-red-200';
+    }
+  };
+
   const formatWatchTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -305,6 +337,28 @@ export function StudentManagement() {
     const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
     return matchesSearch && matchesGraduationYear && matchesCareerChoice && matchesStatus;
   });
+
+  // Sorting
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
+    let comp = 0;
+    switch (sortKey) {
+      case 'progress':
+        comp = a.overallProgress - b.overallProgress;
+        break;
+      case 'lastActive':
+        comp = a.lastActive.getTime() - b.lastActive.getTime();
+        break;
+      case 'name':
+        comp = a.name.localeCompare(b.name);
+        break;
+    }
+    return sortDir === 'asc' ? comp : -comp;
+  });
+
+  // Pagination
+  const pageCount = Math.max(1, Math.ceil(sortedStudents.length / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const pagedStudents = sortedStudents.slice(startIndex, startIndex + pageSize);
 
   const totalStudents = tenantFilteredStudents.length;
   const activeStudents = tenantFilteredStudents.filter(s => s.status === 'active').length;
@@ -482,69 +536,75 @@ export function StudentManagement() {
       {/* Show stats and content only when tenant is selected (for platform owner) or always (for tenant admin) */}
       {(!isPlatformOwner || selectedTenant) && (
         <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="glass-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Students</p>
-                <p className="text-2xl font-bold">{totalStudents}</p>
-                <p className="text-xs text-green-600 flex items-center mt-1">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  +5 this month
-                </p>
+          {/* Stats Cards - grouped IA */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Overview</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="glass-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                        <p className="text-2xl font-bold">{totalStudents}</p>
+                        <p className="text-xs text-green-600 flex items-center mt-1">
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          +5 this month
+                        </p>
+                      </div>
+                      <Users className="w-8 h-8 text-primary opacity-60" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="glass-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Active Learners</p>
+                        <p className="text-2xl font-bold">{activeStudents}</p>
+                        <p className="text-xs text-blue-600 flex items-center mt-1">
+                          <Target className="w-3 h-3 mr-1" />
+                          {totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0}% active
+                        </p>
+                      </div>
+                      <GraduationCap className="w-8 h-8 text-blue-500 opacity-60" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <Users className="w-8 h-8 text-primary opacity-60" />
             </div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Learners</p>
-                <p className="text-2xl font-bold">{activeStudents}</p>
-                <p className="text-xs text-blue-600 flex items-center mt-1">
-                  <Target className="w-3 h-3 mr-1" />
-                  {Math.round((activeStudents / totalStudents) * 100)}% active
-                </p>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Performance</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                <Card className="glass-card md:col-span-2">
+                  <CardContent className="p-6 flex items-center gap-6">
+                    <ProgressCircle value={avgProgress} size="lg" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Avg Progress</p>
+                      <p className="text-3xl font-bold">{avgProgress}%</p>
+                      <p className="text-xs text-purple-600 flex items-center mt-1">
+                        <BookOpen className="w-3 h-3 mr-1" />Across active skills
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="glass-card">
+                  <CardContent className="p-6 h-full">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Completions</p>
+                        <p className="text-2xl font-bold">{totalCompletions}</p>
+                        <p className="text-xs text-green-600 flex items-center mt-1">
+                          <Award className="w-3 h-3 mr-1" />Total completed
+                        </p>
+                      </div>
+                      <Award className="w-8 h-8 text-green-500 opacity-60" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <GraduationCap className="w-8 h-8 text-blue-500 opacity-60" />
             </div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Progress</p>
-                <p className="text-2xl font-bold">{avgProgress}%</p>
-                <p className="text-xs text-purple-600 flex items-center mt-1">
-                  <BookOpen className="w-3 h-3 mr-1" />
-                  Across all courses
-                </p>
-              </div>
-              <Target className="w-8 h-8 text-purple-500 opacity-60" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Completions</p>
-                <p className="text-2xl font-bold">{totalCompletions}</p>
-                <p className="text-xs text-green-600 flex items-center mt-1">
-                  <Award className="w-3 h-3 mr-1" />
-                  Total completed
-                </p>
-              </div>
-              <Award className="w-8 h-8 text-green-500 opacity-60" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
       {/* Navigation */}
       <TubelightNavbar 
@@ -565,19 +625,14 @@ export function StudentManagement() {
             onClick: () => setActiveTab('analytics')
           }
         ]}
-        activeItem={activeTab}
+        activeItem={activeTab === 'students' ? 'Students' : activeTab === 'progress' ? 'Progress' : 'Analytics'}
         className="relative top-0 mb-8"
       />
 
       <Tabs defaultValue={activeTab} value={activeTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="students">All Students</TabsTrigger>
-          <TabsTrigger value="progress">Progress Tracking</TabsTrigger>
-          <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
-        </TabsList>
 
         <TabsContent value="students" className="space-y-6">
-          {/* Filters */}
+          {/* Filters - pill style with Apply/Clear and Sort */}
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex flex-wrap gap-4 items-center">
@@ -586,14 +641,14 @@ export function StudentManagement() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                       placeholder="Search students..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      value={tempSearchTerm}
+                      onChange={(e) => setTempSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
                 </div>
-                <Select value={graduationYearFilter} onValueChange={setGraduationYearFilter}>
-                  <SelectTrigger className="w-[180px]">
+                <Select value={tempGraduationYear} onValueChange={setTempGraduationYear}>
+                  <SelectTrigger className="w-[180px] rounded-full">
                     <SelectValue placeholder="Graduation Year" />
                   </SelectTrigger>
                   <SelectContent>
@@ -603,9 +658,9 @@ export function StudentManagement() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={careerChoiceFilter} onValueChange={setCareerChoiceFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Career Choice" />
+                <Select value={tempCareerChoice} onValueChange={setTempCareerChoice}>
+                  <SelectTrigger className="w-[180px] rounded-full">
+                    <SelectValue placeholder="Career" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Careers</SelectItem>
@@ -614,8 +669,8 @@ export function StudentManagement() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px]">
+                <Select value={tempStatus} onValueChange={setTempStatus}>
+                  <SelectTrigger className="w-[150px] rounded-full">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -625,6 +680,58 @@ export function StudentManagement() {
                     <SelectItem value="suspended">Suspended</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {/* Sort controls */}
+                <Select value={sortKey} onValueChange={(v) => setSortKey(v as any)}>
+                  <SelectTrigger className="w-[160px] rounded-full">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="progress">Progress %</SelectItem>
+                    <SelectItem value="lastActive">Last Active</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sortDir} onValueChange={(v) => setSortDir(v as any)}>
+                  <SelectTrigger className="w-[140px] rounded-full">
+                    <SelectValue placeholder="Order" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="desc">Desc</SelectItem>
+                    <SelectItem value="asc">Asc</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="ml-auto flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm(tempSearchTerm);
+                      setGraduationYearFilter(tempGraduationYear);
+                      setCareerChoiceFilter(tempCareerChoice);
+                      setStatusFilter(tempStatus);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Apply Filters
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setTempSearchTerm('');
+                      setTempGraduationYear('all');
+                      setTempCareerChoice('all');
+                      setTempStatus('all');
+                      setSearchTerm('');
+                      setGraduationYearFilter('all');
+                      setCareerChoiceFilter('all');
+                      setStatusFilter('all');
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -637,56 +744,54 @@ export function StudentManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox />
-                    </TableHead>
                     <TableHead>Student</TableHead>
                     <TableHead>Batch/Year</TableHead>
-                    <TableHead>Career Choice</TableHead>
-                    <TableHead>Current Skill</TableHead>
-                    <TableHead>Progress</TableHead>
+                    <TableHead>Active Skill</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Last Active</TableHead>
-                    <TableHead>Performance</TableHead>
-                    <TableHead></TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.map((student) => (
+                  {pagedStudents.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell>
-                        <Checkbox />
-                      </TableCell>
-                      <TableCell>
                         <div>
-                          <div className="font-medium">{student.name}</div>
+                          <div className="font-semibold">{student.name}</div>
                           <div className="text-sm text-muted-foreground">{student.email}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div className="font-medium">{student.batch}</div>
+                          <div className="text-muted-foreground">{student.batch}</div>
                           <div className="text-muted-foreground">{student.graduationYear}</div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">
-                          <Briefcase className="w-3 h-3 mr-1" />
-                          {student.careerChoice || 'Not selected'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {student.currentSkill || 'No active skill'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
                         <div className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span>{student.completedSkills}/{student.enrolledSkills}</span>
-                            <span>{student.overallProgress}%</span>
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium">
+                              {student.currentSkill || 'No active skill'}
+                            </div>
+                            <Badge className={getEngagementClass(getEngagementLevel(student))}>
+                              {getEngagementLevel(student)}
+                            </Badge>
                           </div>
-                          <Progress value={student.overallProgress} className="h-2" />
+                          <div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-semibold">{student.overallProgress}%</span>
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <Progress value={student.overallProgress} className="h-2" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {student.completedSkills} of {student.enrolledSkills} skills completed
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -700,43 +805,107 @@ export function StudentManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>{student.averageScore}% avg</div>
-                          <div className="text-muted-foreground">{formatWatchTime(student.totalWatchTime)}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
+                          <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  View Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <BookOpen className="w-4 h-4 mr-2" />
+                                  Assign Skill
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Mail className="w-4 h-4 mr-2" />
+                                  Send Message
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button
+                              variant="ghost"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              size="sm"
+                              onClick={() => { setStudentToRemove(student); setIsRemoveConfirmOpen(true); }}
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Edit className="w-4 h-4 mr-2" />
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <BookOpen className="w-4 h-4 mr-2" />
-                              Assign Skill
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className="w-4 h-4 mr-2" />
-                              Send Message
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Remove Student
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          </div>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Page {currentPage} of {pageCount}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Select value={pageSize.toString()} onValueChange={(v) => { setPageSize(parseInt(v)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Rows" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 / page</SelectItem>
+                      <SelectItem value="20">20 / page</SelectItem>
+                      <SelectItem value="50">50 / page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage >= pageCount}
+                    onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
+          {/* Remove Student Confirm */}
+          <Dialog open={isRemoveConfirmOpen} onOpenChange={setIsRemoveConfirmOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Remove Student</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Are you sure you want to remove {studentToRemove?.name}? This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsRemoveConfirmOpen(false)}>Cancel</Button>
+                  <Button
+                    className="bg-red-600 text-white hover:bg-red-700"
+                    onClick={() => {
+                      if (studentToRemove) {
+                        setStudents(prev => prev.filter(s => s.id !== studentToRemove.id));
+                      }
+                      setIsRemoveConfirmOpen(false);
+                      setStudentToRemove(null);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-6">

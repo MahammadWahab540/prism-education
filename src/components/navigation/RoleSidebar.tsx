@@ -82,7 +82,7 @@ const getNavigationItems = (role: string) => {
     case 'platform_owner':
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'Course Management', url: '/course-management', icon: BookOpen },
+        { title: 'Active Skills', url: '/course-management', icon: BookOpen },
         { title: 'Tenants', url: '/tenants', icon: Building2 },
         { title: 'Students', url: '/students', icon: GraduationCap },
         { title: 'Analytics', url: '/analytics', icon: BarChart3 },
@@ -96,7 +96,7 @@ const getNavigationItems = (role: string) => {
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'Students', url: '/students', icon: GraduationCap },
         { title: 'Analytics', url: '/tenant-analytics', icon: PieChart },
-        { title: 'Reports', url: '/tenant-reports', icon: FileText },
+        { title: 'Reports', url: '/tenant-analytics', icon: FileText },
         { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
       ];
     case 'student':
@@ -167,7 +167,7 @@ export function RoleSidebar() {
                       size="sm"
                       className="flex w-fit items-center gap-2 px-2"
                     >
-                      <Avatar className="rounded size-4">
+                      <Avatar size="xs" tooltip={organizationName}>
                         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                           {organizationName.charAt(0)}
                         </AvatarFallback>
@@ -279,7 +279,7 @@ export function RoleSidebar() {
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="w-full">
                       <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                        <Avatar className="size-4">
+                        <Avatar size="xs" tooltip={user.name}>
                           <AvatarImage src={user.avatar} alt={user.name} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             {user.name?.charAt(0)}
@@ -300,7 +300,7 @@ export function RoleSidebar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent sideOffset={5} className="bg-card-glass backdrop-blur-md">
                       <div className="flex flex-row items-center gap-2 p-2">
-                        <Avatar className="size-6">
+                        <Avatar size="sm" tooltip={`${user.name} - ${user.email}`}>
                           <AvatarImage src={user.avatar} alt={user.name} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {user.name?.charAt(0)}

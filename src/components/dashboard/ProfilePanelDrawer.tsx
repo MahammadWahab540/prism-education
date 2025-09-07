@@ -1,12 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProfilePanel } from '@/contexts/ProfilePanelContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { X } from 'lucide-react';
 
 const RightProfilePanelLazy = React.lazy(() => import('./RightProfilePanel').then(m => ({ default: m.RightProfilePanel })));
+const AdminProfileDrawerLazy = React.lazy(() => import('../admin/ProfileDrawer').then(m => ({ default: m.ProfileDrawer })));
 
 export function ProfilePanelDrawer() {
   const { open, closePanel } = useProfilePanel();
+  const { user } = useAuth();
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -71,7 +74,11 @@ export function ProfilePanelDrawer() {
             </div>
             <div className="h-[calc(100vh-49px)] overflow-y-auto">
               <React.Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading...</div>}>
-                <RightProfilePanelLazy />
+                {user?.role === 'tenant_admin' ? (
+                  <AdminProfileDrawerLazy />
+                ) : (
+                  <RightProfilePanelLazy />
+                )}
               </React.Suspense>
             </div>
           </motion.div>
@@ -80,4 +87,3 @@ export function ProfilePanelDrawer() {
     </AnimatePresence>
   );
 }
-

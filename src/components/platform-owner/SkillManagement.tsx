@@ -197,7 +197,7 @@ export function SkillManagement() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-luxury">Skill Management</h1>
+          <h1 className="text-3xl font-bold text-gradient-luxury">Active Skills</h1>
           <p className="text-muted-foreground mt-2">Create and manage learning skills across tenants</p>
         </div>
         <Dialog open={isCreateSkillOpen} onOpenChange={setIsCreateSkillOpen}>

@@ -6,7 +6,7 @@ import { StudentRouteGuard } from '@/components/guards/StudentRouteGuard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from 'next-themes';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import MySkills from '@/pages/MySkills';
