@@ -13,10 +13,14 @@ import MySkills from '@/pages/MySkills';
 import Roadmap from '@/pages/Roadmap';
 import LearningPage from '@/pages/LearningPage';
 import CourseManagement from '@/pages/CourseManagement';
+import Capstone from '@/pages/Capstone';
+import CapstoneDetailView from '@/pages/CapstoneDetailView';
 import Tenants from '@/pages/Tenants';
 import Analytics from '@/pages/Analytics';
 import SystemUsers from '@/pages/SystemUsers';
 import Students from '@/pages/Students';
+import AdminCapstoneSubmissions from '@/pages/AdminCapstoneSubmissions';
+import AdminCapstoneDetail from '@/pages/admin/CapstoneDetail';
 import TenantAnalytics from '@/pages/TenantAnalytics';
 import TenantReports from '@/pages/TenantReports';
 import HelpSupport from '@/pages/HelpSupport';
@@ -44,11 +48,15 @@ function AppContent() {
                   <Route path="/roadmap/:skillId" element={<Roadmap />} />
                   <Route path="/learn/:skillId/:stageId" element={<LearningPage />} />
                   <Route path="/course-management" element={<CourseManagement />} />
+                  <Route path="/capstone/:capstoneId" element={<Capstone />} />
+                  <Route path="/capstone-instance/:instanceId" element={<CapstoneDetailView />} />
                   <Route path="/tenants" element={<Tenants />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/tenant-analytics" element={<TenantAnalytics />} />
                   <Route path="/tenant-reports" element={<TenantReports />} />
+                  <Route path="/admin/capstones/submissions" element={<AdminCapstoneSubmissions />} />
                   <Route path="/system-users" element={<SystemUsers />} />
+                  <Route path="/admin/capstones/:instanceId" element={<AdminCapstoneDetail />} />
                   <Route path="/students" element={<Students />} />
                   <Route path="/help-support" element={<HelpSupport />} />
                   <Route path="/settings" element={<React.Suspense fallback={<div className="p-6">Loading...</div>}><AccountSettingsRoute /></React.Suspense>} />
@@ -79,4 +87,3 @@ function App() {
 }
 
 export default App;
-

@@ -83,6 +83,7 @@ const getNavigationItems = (role: string) => {
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'Course Management', url: '/course-management', icon: BookOpen },
+        { title: 'Capstone Submissions', url: '/admin/capstones/submissions', icon: ClipboardList },
         { title: 'Tenants', url: '/tenants', icon: Building2 },
         { title: 'Students', url: '/students', icon: GraduationCap },
         { title: 'Analytics', url: '/analytics', icon: BarChart3 },
@@ -95,6 +96,7 @@ const getNavigationItems = (role: string) => {
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'Students', url: '/students', icon: GraduationCap },
+        { title: 'Capstone Submissions', url: '/admin/capstones/submissions', icon: ClipboardList },
         { title: 'Analytics', url: '/tenant-analytics', icon: PieChart },
         { title: 'Reports', url: '/tenant-reports', icon: FileText },
         { title: 'Help & Support', url: '/help-support', icon: MessageSquare },

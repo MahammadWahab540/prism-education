@@ -7,6 +7,11 @@ import { ProgressTracker } from '@/components/roadmap/ProgressTracker';
 import { RoadmapContainer } from '@/components/roadmap/RoadmapContainer';
 import { Button } from '@/components/ui/button';
 import { useUnlockLogic } from '@/hooks/useUnlockLogic';
+import { useCapstones } from '@/hooks/useCapstones';
+import { useAuth } from '@/contexts/AuthContext';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { CapstoneCard } from '@/components/roadmap/CapstoneCard';
+import { CapstonePickerModal } from '@/components/capstone/CapstonePickerModal';
 
 const Roadmap = () => {
   const { skillId } = useParams();
@@ -82,10 +87,17 @@ const Roadmap = () => {
     },
   ];
 
-  const { getOverallProgress, getCurrentStage } = useUnlockLogic(
+  const { getOverallProgress, getCurrentStage, allDone, overallPercentage } = useUnlockLogic(
     skillId || 'javascript-typescript',
     stages.length
   );
+
+  const { user } = useAuth();
+  const { } = useCapstones();
+  const overall = getOverallProgress();
+  const unlockThreshold = 100; // configurable
+  const capstoneLocked = overall < unlockThreshold;
+  const [isPickerOpen, setPickerOpen] = React.useState(false);
 
   const handleStageSelect = (stageId: string) => {
     console.log('Navigate to learning page for stage:', stageId);
@@ -154,6 +166,27 @@ const Roadmap = () => {
             <li>• Take notes and practice coding along with the videos</li>
             <li>• Don't rush - focus on understanding concepts deeply</li>
           </ul>
+        </div>
+
+        {/* Capstone Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold">Capstone Project</h3>
+            <div className="text-sm text-muted-foreground">Progress: {overall}%</div>
+          </div>
+
+          <CapstoneCard
+            allDone={!capstoneLocked}
+            overallPercentage={overallPercentage}
+            onSelectProject={() => setPickerOpen(true)}
+          />
+          <CapstonePickerModal
+            open={isPickerOpen}
+            onOpenChange={setPickerOpen}
+            skillId={skillId || 'javascript-typescript'}
+            skillName={currentSkill.title}
+            onCreated={(instanceId) => navigate(`/capstone-instance/${instanceId}`)}
+          />
         </div>
       </div>
     </DashboardLayout>

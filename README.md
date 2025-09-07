@@ -60,6 +60,33 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Capstone Orchestrator (Mock + Schema)
+
+- System prompt and developer prompt helpers live in `src/lib/capstoneOrchestrator.ts`.
+- Zod schemas validate the strict JSON contract (4 suggestions, selection policy, and a fully renderable instance).
+- Use `buildMockOrchestration({ skill, userId, tenantId, selectedTemplateId, mode: 'mock' })` for dev to eliminate "Instance not found".
+- Validate any LLM response with `validateOrchestration(payload)` and map to UI via `orchestrationToRoadmap(orchestration)`.
+
+Example (dev):
+
+```ts
+import { buildMockOrchestration, orchestrationToRoadmap, buildDeveloperPrompt, CAPSTONE_ORCHESTRATOR_SYSTEM_PROMPT } from '@/lib/capstoneOrchestrator';
+
+const o = buildMockOrchestration({
+  skill: 'Full-Stack Web (JS)',
+  userId: 'user-123',
+  tenantId: 'tenant-abc',
+  selectedTemplateId: 'full-stack-web-js-a',
+  mode: 'mock',
+});
+// o.instance contains stages/subProjects/subTasks ready for the UI
+const roadmap = orchestrationToRoadmap(o);
+
+// For prod LLM calls:
+const system = CAPSTONE_ORCHESTRATOR_SYSTEM_PROMPT;
+const user = buildDeveloperPrompt({ skill: 'Full-Stack Web (JS)', tenantId: 'tenant-abc', userId: 'user-123', selectedTemplateId: 'full-stack-web-js-a', mode: 'production' });
+```
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/d687e0be-8b39-4938-823e-ef94852553d6) and click on Share -> Publish.

@@ -103,5 +103,8 @@ export function useUnlockLogic(skillId: string, totalStages: number) {
     isStageUnlocked,
     getOverallProgress,
     getCurrentStage,
+    // Added for Capstone gating
+    allDone: getOverallProgress() === 100,
+    overallPercentage: getOverallProgress(),
   };
 }
