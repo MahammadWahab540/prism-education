@@ -27,7 +27,7 @@ export function CapstoneDetail({ capstone }: Props) {
   const onGenerate = () => {
     try {
       setGenError(null);
-      generateRoadmap(capstone, { pace: 'normal' });
+      generateRoadmap(capstone.id);
     } catch (e: any) {
       setGenError(e?.message || 'Failed to generate roadmap');
     }
@@ -41,16 +41,11 @@ export function CapstoneDetail({ capstone }: Props) {
 
   const [links, setLinks] = useState({ repo: '', report: '', demo: '' });
   const onSubmit = () => {
-    const submission: CapstoneSubmission = {
-      id: `sub-${Date.now()}`,
-      capstoneId: capstone.id,
-      skillId: capstone.skillId,
-      submittedAt: new Date().toISOString(),
-      links: { ...links },
-    };
-    submit(submission);
+    const submissionData = { links: { ...links } };
+    submit(capstone.id, submissionData);
     if (canAutoEval) {
-      evaluate(submission.id, capstone.id);
+      const submissionId = `sub-${Date.now()}`;
+      evaluate(submissionId);
     }
   };
 

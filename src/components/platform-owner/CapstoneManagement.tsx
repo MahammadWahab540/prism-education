@@ -56,8 +56,7 @@ export function CapstoneManagement() {
 
   const doPreview = (id: string) => {
     setPreviewForId(id);
-    const cfg = state.configs.find(c => c.id === id);
-    if (cfg) generateRoadmap(cfg);
+    generateRoadmap(id);
     setActiveTab('preview');
   };
 
