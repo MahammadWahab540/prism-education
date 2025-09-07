@@ -149,6 +149,159 @@ export function useCapstones() {
     }
   }, []);
 
+  // Seed demo instances for testing
+  useEffect(() => {
+    if (state.instances.length === 0) {
+      // Create a demo instance for javascript-typescript skill
+      const demoInstance: CapstoneInstance = {
+        id: 'demo-instance-123',
+        userId: 'demo-user',
+        tenantId: 'demo-tenant',
+        templateId: 'tpl-campus-events',
+        skillId: 'javascript-typescript',
+        status: 'Active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        roadmap: {
+          project: {
+            title: 'Campus Events Portal',
+            summary: 'Build a comprehensive MERN web application where students can discover, create, and RSVP to campus events with role-based access and calendar integration.'
+          },
+          stages: [
+            {
+              id: 'stage-1',
+              name: 'Project Setup & Planning',
+              order: 1,
+              uiChecks: ['GitHub repository created', 'Development environment set up', 'Project structure defined'],
+              validation: ['Repository has proper README', 'Dependencies installed correctly', 'Initial commit pushed'],
+              expectedOutcome: 'A well-structured project foundation with proper tooling and documentation'
+            },
+            {
+              id: 'stage-2',
+              name: 'Database Design & API Foundation',
+              order: 2,
+              uiChecks: ['Database schema designed', 'API endpoints defined', 'Authentication setup'],
+              validation: ['Database migrations run successfully', 'Basic CRUD operations work', 'JWT authentication implemented'],
+              expectedOutcome: 'A robust backend foundation with secure authentication and data management'
+            },
+            {
+              id: 'stage-3',
+              name: 'Core Event Management',
+              order: 3,
+              uiChecks: ['Event creation interface', 'Event listing and filtering', 'RSVP functionality'],
+              validation: ['Users can create and manage events', 'Event discovery works correctly', 'RSVP system is functional'],
+              expectedOutcome: 'Complete event lifecycle management from creation to attendance tracking'
+            },
+            {
+              id: 'stage-4',
+              name: 'User Experience & Polish',
+              order: 4,
+              uiChecks: ['Responsive design implemented', 'User dashboard created', 'Notifications system'],
+              validation: ['Mobile-friendly interface', 'Real-time updates work', 'Error handling is comprehensive'],
+              expectedOutcome: 'A polished, user-friendly application with excellent UX/UI'
+            },
+            {
+              id: 'stage-5',
+              name: 'Testing & Deployment',
+              order: 5,
+              uiChecks: ['Unit tests written', 'Integration tests completed', 'Production deployment'],
+              validation: ['Test coverage > 80%', 'All features work in production', 'Performance is optimized'],
+              expectedOutcome: 'A fully tested, deployed application ready for real-world use'
+            }
+          ],
+          subProjects: [
+            {
+              id: 'sp-backend',
+              title: 'Backend Development',
+              description: 'Build the server-side infrastructure including API, authentication, and database management',
+              dependencies: [],
+              tasks: [
+                {
+                  id: 'task-auth',
+                  title: 'Authentication System',
+                  description: 'Implement user registration, login, and JWT-based authentication',
+                  dependencies: [],
+                  acceptanceCriteria: ['Users can register with email/password', 'Login returns valid JWT token', 'Protected routes require authentication'],
+                  subTasks: [
+                    { id: 'st-auth-1', title: 'User model and routes', description: 'Create user schema and auth endpoints', acceptanceCriteria: ['User model defined', 'Auth routes created'] },
+                    { id: 'st-auth-2', title: 'JWT implementation', description: 'Add token generation and verification', acceptanceCriteria: ['JWT tokens generated', 'Token verification middleware'] }
+                  ],
+                  stageId: 'stage-2'
+                },
+                {
+                  id: 'task-events-api',
+                  title: 'Events API',
+                  description: 'Create CRUD operations for event management',
+                  dependencies: ['task-auth'],
+                  acceptanceCriteria: ['Events can be created, read, updated, deleted', 'Proper authorization checks', 'Input validation implemented'],
+                  subTasks: [
+                    { id: 'st-events-1', title: 'Event model', description: 'Define event schema and relationships', acceptanceCriteria: ['Event model created', 'Database relationships defined'] },
+                    { id: 'st-events-2', title: 'CRUD endpoints', description: 'Implement event management endpoints', acceptanceCriteria: ['All CRUD operations work', 'Proper error handling'] }
+                  ],
+                  stageId: 'stage-3'
+                }
+              ]
+            },
+            {
+              id: 'sp-frontend',
+              title: 'Frontend Development',
+              description: 'Build the user interface and user experience components',
+              dependencies: ['sp-backend'],
+              tasks: [
+                {
+                  id: 'task-ui-components',
+                  title: 'Core UI Components',
+                  description: 'Create reusable components for the application interface',
+                  dependencies: [],
+                  acceptanceCriteria: ['Component library established', 'Consistent styling implemented', 'Components are responsive'],
+                  subTasks: [
+                    { id: 'st-ui-1', title: 'Design system setup', description: 'Establish colors, typography, and component standards', acceptanceCriteria: ['Design tokens defined', 'Base components created'] },
+                    { id: 'st-ui-2', title: 'Event components', description: 'Build event card, form, and detail components', acceptanceCriteria: ['Event components functional', 'Props properly typed'] }
+                  ],
+                  stageId: 'stage-3'
+                },
+                {
+                  id: 'task-user-dashboard',
+                  title: 'User Dashboard',
+                  description: 'Create personalized dashboard for users to manage their events and RSVPs',
+                  dependencies: ['task-ui-components'],
+                  acceptanceCriteria: ['Users see their created events', 'RSVP history is displayed', 'Profile management available'],
+                  subTasks: [
+                    { id: 'st-dashboard-1', title: 'Dashboard layout', description: 'Create main dashboard structure and navigation', acceptanceCriteria: ['Dashboard layout complete', 'Navigation functional'] },
+                    { id: 'st-dashboard-2', title: 'Event management', description: 'Add event creation and management features', acceptanceCriteria: ['Event CRUD from dashboard', 'Real-time updates'] }
+                  ],
+                  stageId: 'stage-4'
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      setState(prev => ({ 
+        ...prev, 
+        instances: [demoInstance],
+        instanceProgress: {
+          'demo-instance-123': {
+            stages: {
+              'stage-1': { done: true, checklist: { 'GitHub repository created': true, 'Development environment set up': true, 'Project structure defined': true } },
+              'stage-2': { done: true, checklist: { 'Database schema designed': true, 'API endpoints defined': true, 'Authentication setup': true } },
+              'stage-3': { done: false, checklist: { 'Event creation interface': true, 'Event listing and filtering': false, 'RSVP functionality': false } },
+              'stage-4': { done: false, checklist: {} },
+              'stage-5': { done: false, checklist: {} }
+            },
+            tasks: {
+              'task-auth': true,
+              'task-events-api': false,
+              'task-ui-components': true,
+              'task-user-dashboard': false
+            }
+          }
+        }
+      }));
+    }
+  }, []);
+
   // Seed templates
   useEffect(() => {
     if (state.templates.length === 0) {
