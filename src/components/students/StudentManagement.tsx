@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,11 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStudentMetrics } from '@/hooks/useStudentMetrics';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/use-toast';
+import { exportStudentsToCsv } from '@/services/export';
+import { Loader2 } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -195,6 +200,37 @@ export function StudentManagement() {
     graduationYear: new Date().getFullYear(),
     batch: ''
   });
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      // Build CSV from filtered students respecting current filters
+      const rows = filteredStudents.map((s) => ({
+        Name: s.name,
+        Email: s.email,
+        GraduationYear: s.graduationYear,
+        Batch: s.batch,
+        CareerChoice: s.careerChoice || '',
+        EnrolledSkills: s.enrolledSkills,
+        CompletedSkills: s.completedSkills,
+        ProgressPercent: s.overallProgress,
+        Status: s.status,
+        LastActive: s.lastActive.toISOString(),
+        AvgScore: s.averageScore,
+        TotalWatchTimeMinutes: s.totalWatchTime,
+        CurrentSkill: s.currentSkill || '',
+      }));
+      const tenantLabel = isPlatformOwner ? (tenants.find(t => t.id === selectedTenant)?.name || 'Tenant') : 'MyTenant';
+      const date = new Date().toISOString().slice(0,10);
+      const filename = `students_export_${tenantLabel.replace(/\s+/g,'_')}_${date}.csv`;
+      await exportStudentsToCsv(rows as any, filename);
+    } catch (e) {
+      toast({ title: 'Export failed. Please try again.' });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleAddStudent = () => {
     const student: Student = {
@@ -306,10 +342,8 @@ export function StudentManagement() {
     return matchesSearch && matchesGraduationYear && matchesCareerChoice && matchesStatus;
   });
 
-  const totalStudents = tenantFilteredStudents.length;
-  const activeStudents = tenantFilteredStudents.filter(s => s.status === 'active').length;
-  const avgProgress = totalStudents > 0 ? Math.round(tenantFilteredStudents.reduce((sum, s) => sum + s.overallProgress, 0) / totalStudents) : 0;
-  const totalCompletions = tenantFilteredStudents.reduce((sum, s) => sum + s.completedSkills, 0);
+  const { metrics, isLoading } = useStudentMetrics(tenantFilteredStudents as any, [selectedTenant, students.length]);
+  const { totalStudents, activeStudents, avgProgress, totalCompletions, topPerformers, attention } = metrics;
 
   const graduationYears = [...new Set(tenantFilteredStudents.map(s => s.graduationYear))].sort((a, b) => b - a);
   const careerChoices = [...new Set(tenantFilteredStudents.map(s => s.careerChoice).filter(Boolean))] as string[];
@@ -336,12 +370,21 @@ export function StudentManagement() {
           </p>
         </div>
         <div className="flex gap-3">
-          {!isPlatformOwner && (
-            <>
-              <Button variant="outline">
+          <Button onClick={handleExport} disabled={exporting}>
+            {exporting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Exporting…
+              </>
+            ) : (
+              <>
                 <Download className="w-4 h-4 mr-2" />
                 Export Data
-              </Button>
+              </>
+            )}
+          </Button>
+          {!isPlatformOwner && (
+            <>
               <Dialog open={isUploadCsvOpen} onOpenChange={setIsUploadCsvOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
@@ -410,12 +453,7 @@ export function StudentManagement() {
               </Dialog>
             </>
           )}
-          {isPlatformOwner && (
-            <Button variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Export Data
-            </Button>
-          )}
+          {/* Removed duplicate Export Data CTA for platform owner */}
         </div>
       </div>
 
@@ -456,10 +494,10 @@ export function StudentManagement() {
                 </Select>
               </div>
               {isPlatformOwner && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Shield className="w-4 h-4" />
-                  <span>Read-only access</span>
-                </div>
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Shield className="w-4 h-4" aria-hidden="true" />
+                  Read-only
+                </Badge>
               )}
             </div>
           </CardContent>
@@ -489,13 +527,17 @@ export function StudentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Students</p>
-                <p className="text-2xl font-bold">{totalStudents}</p>
+                {isLoading ? (
+                  <Skeleton className="h-7 w-20 mt-1" />
+                ) : (
+                  <p className="text-3xl font-bold">{totalStudents}</p>
+                )}
                 <p className="text-xs text-green-600 flex items-center mt-1">
-                  <TrendingUp className="w-3 h-3 mr-1" />
+                  <TrendingUp className="w-3 h-3 mr-1" aria-hidden="true" />
                   +5 this month
                 </p>
               </div>
-              <Users className="w-8 h-8 text-primary opacity-60" />
+              <Users className="w-8 h-8 text-primary opacity-60" aria-hidden="true" />
             </div>
           </CardContent>
         </Card>
@@ -504,13 +546,17 @@ export function StudentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active Learners</p>
-                <p className="text-2xl font-bold">{activeStudents}</p>
+                {isLoading ? (
+                  <Skeleton className="h-7 w-16 mt-1" />
+                ) : (
+                  <p className="text-3xl font-bold">{activeStudents}</p>
+                )}
                 <p className="text-xs text-blue-600 flex items-center mt-1">
-                  <Target className="w-3 h-3 mr-1" />
-                  {Math.round((activeStudents / totalStudents) * 100)}% active
+                  <Target className="w-3 h-3 mr-1" aria-hidden="true" />
+                  {totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0}% active
                 </p>
               </div>
-              <GraduationCap className="w-8 h-8 text-blue-500 opacity-60" />
+              <GraduationCap className="w-8 h-8 text-blue-500 opacity-60" aria-hidden="true" />
             </div>
           </CardContent>
         </Card>
@@ -519,13 +565,17 @@ export function StudentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Avg Progress</p>
-                <p className="text-2xl font-bold">{avgProgress}%</p>
+                {isLoading ? (
+                  <Skeleton className="h-7 w-14 mt-1" />
+                ) : (
+                  <p className="text-3xl font-bold">{avgProgress}%</p>
+                )}
                 <p className="text-xs text-purple-600 flex items-center mt-1">
-                  <BookOpen className="w-3 h-3 mr-1" />
+                  <BookOpen className="w-3 h-3 mr-1" aria-hidden="true" />
                   Across all courses
                 </p>
               </div>
-              <Target className="w-8 h-8 text-purple-500 opacity-60" />
+              <Target className="w-8 h-8 text-purple-500 opacity-60" aria-hidden="true" />
             </div>
           </CardContent>
         </Card>
@@ -534,46 +584,29 @@ export function StudentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Completions</p>
-                <p className="text-2xl font-bold">{totalCompletions}</p>
+                {isLoading ? (
+                  <Skeleton className="h-7 w-16 mt-1" />
+                ) : (
+                  <p className="text-3xl font-bold">{totalCompletions}</p>
+                )}
                 <p className="text-xs text-green-600 flex items-center mt-1">
-                  <Award className="w-3 h-3 mr-1" />
+                  <Award className="w-3 h-3 mr-1" aria-hidden="true" />
                   Total completed
                 </p>
               </div>
-              <Award className="w-8 h-8 text-green-500 opacity-60" />
+              <Award className="w-8 h-8 text-green-500 opacity-60" aria-hidden="true" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Navigation */}
-      <TubelightNavbar 
-        items={[
-          {
-            name: "Students",
-            icon: Users,
-            onClick: () => setActiveTab('students')
-          },
-          {
-            name: "Progress",
-            icon: Target,
-            onClick: () => setActiveTab('progress')
-          },
-          {
-            name: "Analytics",
-            icon: TrendingUp,
-            onClick: () => setActiveTab('analytics')
-          }
-        ]}
-        activeItem={activeTab}
-        className="relative top-0 mb-8"
-      />
+      {/* Removed duplicate navigation (TubelightNavbar) to keep a single tab system */}
 
-      <Tabs defaultValue={activeTab} value={activeTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="students">All Students</TabsTrigger>
-          <TabsTrigger value="progress">Progress Tracking</TabsTrigger>
-          <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="rounded-full">
+          <TabsTrigger value="students" className="rounded-full px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring">All Students</TabsTrigger>
+          <TabsTrigger value="progress" className="rounded-full px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring">Progress Tracking</TabsTrigger>
+          <TabsTrigger value="analytics" className="rounded-full px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring">Performance Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="space-y-6">
@@ -746,14 +779,20 @@ export function StudentManagement() {
                 <CardTitle>Top Performers</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {students
-                    .sort((a, b) => b.overallProgress - a.overallProgress)
-                    .slice(0, 5)
-                    .map((student, index) => (
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : topPerformers.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No top performers yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {topPerformers.map((student, index) => (
                       <div key={student.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium text-primary">
                             {index + 1}
                           </div>
                            <div>
@@ -769,39 +808,51 @@ export function StudentManagement() {
                         </div>
                       </div>
                     ))}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            <Card className="glass-card">
+            <Card className="glass-card border-amber-200/50 bg-amber-50/40 dark:bg-amber-950/10">
               <CardHeader>
                 <CardTitle>Students Needing Attention</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {students
-                    .filter(s => s.overallProgress < 30 || s.status === 'inactive')
-                    .slice(0, 5)
-                    .map((student) => (
-                      <div key={student.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                           <div>
-                             <p className="font-medium">{student.name}</p>
-                             <p className="text-sm text-muted-foreground">{student.careerChoice || student.batch}</p>
-                           </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="outline" className="text-yellow-600">
-                            {student.overallProgress}%
-                          </Badge>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {student.status === 'inactive' ? 'Inactive' : 'Low progress'}
-                          </p>
-                        </div>
-                      </div>
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
                     ))}
-                </div>
+                  </div>
+                ) : attention.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No students need attention.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {attention.map((student) => {
+                      const color = student.overallProgress < 20 ? 'text-red-600' : student.overallProgress < 50 ? 'text-amber-600' : 'text-green-600';
+                      const statusLabel = student.status === 'inactive' ? 'Inactive' : (student.overallProgress < 30 ? 'Low Progress' : '');
+                      return (
+                        <div key={student.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <AlertTriangle className="w-5 h-5 text-amber-500" aria-hidden="true" />
+                             <div>
+                               <p className="font-medium">{student.name}</p>
+                               <p className="text-sm text-muted-foreground">{student.careerChoice || student.batch}</p>
+                             </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className={color}>
+                              {student.overallProgress}%
+                            </Badge>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {statusLabel}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

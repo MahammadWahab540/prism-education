@@ -436,14 +436,20 @@ export function useCapstones() {
     return sub;
   };
 
-  const listAdminSubmissions = (filter?: { tenantId?: string; status?: InstanceSubmission['status']; skillId?: string; dateFrom?: string; dateTo?: string }) => {
+  const listAdminSubmissions = (filter?: { tenantId?: string; tenantIds?: string[]; status?: InstanceSubmission['status']; skillId?: string; skillIds?: string[]; dateFrom?: string; dateTo?: string }) => {
     const all = Object.values(state.instanceSubmissions).flat();
     return all.filter(s => {
       const inst = state.instances.find(i => i.id === s.instanceId);
       if (!inst) return false;
-      if (filter?.tenantId && s.tenantId !== filter.tenantId) return false;
+      // Tenant filter: support single or multiple
+      if (filter?.tenantIds && filter.tenantIds.length > 0) {
+        if (!s.tenantId || !filter.tenantIds.includes(s.tenantId)) return false;
+      } else if (filter?.tenantId && s.tenantId !== filter.tenantId) return false;
       if (filter?.status && s.status !== filter.status) return false;
-      if (filter?.skillId && inst.skillId !== filter.skillId) return false;
+      // Skill filter: support single or multiple
+      if (filter?.skillIds && filter.skillIds.length > 0) {
+        if (!filter.skillIds.includes(inst.skillId)) return false;
+      } else if (filter?.skillId && inst.skillId !== filter.skillId) return false;
       if (filter?.dateFrom && new Date(s.submittedAt) < new Date(filter.dateFrom)) return false;
       if (filter?.dateTo && new Date(s.submittedAt) > new Date(filter.dateTo)) return false;
       return true;

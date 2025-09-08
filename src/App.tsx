@@ -1,4 +1,5 @@
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { LearningPathProvider } from '@/contexts/LearningPathContext';
@@ -77,10 +78,13 @@ function AppContent() {
 }
 
 function App() {
+  const [queryClient] = React.useState(() => new QueryClient());
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <AuthProvider>
-        <AppContent />
+        <QueryClientProvider client={queryClient}>
+          <AppContent />
+        </QueryClientProvider>
       </AuthProvider>
     </ThemeProvider>
   );

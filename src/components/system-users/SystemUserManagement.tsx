@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,11 @@ import {
   Users
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTenants, getTenantUsage, incrementUsedSeats, requestMoreSeats, TenantsQueryKey } from '@/services/tenants';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from '@/components/ui/use-toast';
+import { track } from '@/lib/analytics';
 import { Switch } from '@/components/ui/switch';
 
 interface SystemUser {
@@ -106,14 +111,36 @@ export function SystemUserManagement() {
     tenantId: ''
   });
 
+  const { data: tenantsData = [] } = useQuery({ queryKey: TenantsQueryKey, queryFn: fetchTenants });
+  const selectedTenantUsage = useMemo(() => {
+    if (!newUser.tenantId) return null;
+    try {
+      return getTenantUsage(newUser.tenantId);
+    } catch {
+      return null;
+    }
+  }, [newUser.tenantId, systemUsers.length]);
+
   const handleCreateUser = () => {
+    if (newUser.role === 'tenant_admin' && newUser.tenantId) {
+      try {
+        incrementUsedSeats(newUser.tenantId, 1);
+      } catch (e: any) {
+        if (e?.code === 'QUOTA_EXCEEDED') {
+          const usage = getTenantUsage(newUser.tenantId);
+          track({ name: 'user_create_blocked_quota', props: { tenant_id: newUser.tenantId, used_seats: usage.used_seats, account_quota: usage.account_quota } });
+          toast({ title: 'Seat limit reached. Please request more seats.' });
+          return;
+        }
+      }
+    }
     const user: SystemUser = {
       id: Date.now().toString(),
       ...newUser,
       status: 'pending',
       createdAt: new Date(),
       permissions: getDefaultPermissions(newUser.role),
-      tenantName: newUser.tenantId ? getTenantName(newUser.tenantId) : undefined
+      tenantName: newUser.tenantId ? (tenantsData.find((t: any) => t.id === newUser.tenantId)?.name || getTenantName(newUser.tenantId)) : undefined
     };
     setSystemUsers([...systemUsers, user]);
     setIsCreateUserOpen(false);
@@ -255,23 +282,55 @@ export function SystemUserManagement() {
                 </SelectContent>
               </Select>
               {newUser.role === 'tenant_admin' && (
-                <Select
-                  value={newUser.tenantId}
-                  onValueChange={(value) => setNewUser({ ...newUser, tenantId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Tenant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">TechCorp Inc.</SelectItem>
-                    <SelectItem value="2">EduLearn Academy</SelectItem>
-                    <SelectItem value="3">StartupHub</SelectItem>
-                  </SelectContent>
-                </Select>
+                <>
+                  <Select
+                    value={newUser.tenantId}
+                    onValueChange={(value) => setNewUser({ ...newUser, tenantId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Tenant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tenantsData.length === 0 && (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">No tenants available</div>
+                      )}
+                      {tenantsData.map((t: any) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedTenantUsage && (
+                    <div className="text-xs text-muted-foreground">
+                      Seats: {selectedTenantUsage.used_seats} / {selectedTenantUsage.account_quota} ({selectedTenantUsage.remaining} remaining)
+                      {selectedTenantUsage.remaining <= 3 && selectedTenantUsage.remaining > 0 && (
+                        <span className="ml-2 text-amber-600">Only {selectedTenantUsage.remaining} seats left</span>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
-              <Button onClick={handleCreateUser} className="w-full">
-                Create User
-              </Button>
+              <div className="flex gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="w-full">
+                      <Button onClick={handleCreateUser} className="w-full" disabled={!!(newUser.role === 'tenant_admin' && selectedTenantUsage && selectedTenantUsage.remaining <= 0)}>
+                        Create User
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {newUser.role === 'tenant_admin' && selectedTenantUsage && selectedTenantUsage.remaining <= 0 && (
+                    <TooltipContent>Seat limit reached. Request more seats.</TooltipContent>
+                  )}
+                </Tooltip>
+                {newUser.role === 'tenant_admin' && selectedTenantUsage && selectedTenantUsage.remaining <= 0 && (
+                  <Button variant="secondary" onClick={() => {
+                    if (!newUser.tenantId) return;
+                    requestMoreSeats(newUser.tenantId, 5);
+                    track({ name: 'seat_request_submitted', props: { tenant_id: newUser.tenantId, requested_delta: 5 } });
+                    toast({ title: 'Request for more seats submitted.' });
+                  }}>Request more seats</Button>
+                )}
+              </div>
             </div>
           </DialogContent>
         </Dialog>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,25 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useProfilePanel } from '@/contexts/ProfilePanelContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { NewTenantModal } from '@/components/tenants/NewTenantModal';
+import { SettingsDrawer } from '@/components/settings/SettingsDrawer';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTenants, TenantsQueryKey, Tenant } from '@/services/tenants';
+import { track } from '@/lib/analytics';
 
 export function PlatformOwnerDashboard() {
   const { openPanel } = useProfilePanel();
+  const { user } = useAuth();
+  const canManagePlatform = user?.role === 'platform_owner';
+  const [isNewTenantOpen, setIsNewTenantOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const { data: tenantsData = [], isLoading: isTenantsLoading } = useQuery({
+    queryKey: TenantsQueryKey,
+    queryFn: fetchTenants,
+  });
   const stats = [
     { 
       label: 'Total Tenants', 
@@ -57,12 +73,18 @@ export function PlatformOwnerDashboard() {
     }
   ];
 
-  const tenants = [
-    { name: 'TechCorp University', students: 486, status: 'active', growth: '+15%' },
-    { name: 'Design Academy', students: 342, status: 'active', growth: '+22%' },
-    { name: 'Business School Pro', students: 678, status: 'active', growth: '+8%' },
-    { name: 'Creative Arts Hub', students: 234, status: 'trial', growth: '+45%' }
-  ];
+  // Map real tenants to display rows; growth is mock here
+  const tenants = useMemo(() => {
+    if (!tenantsData?.length) return [] as Array<{ name: string; students: number; status: string; growth: string; usedSeats: number; accountQuota: number }>;
+    return tenantsData.map((t: any) => ({
+      name: t.name,
+      students: Math.floor(Math.random() * 500) + 50,
+      status: t.status || 'active',
+      growth: `+${Math.floor(Math.random() * 40) + 5}%`,
+      usedSeats: t.usedSeats ?? 0,
+      accountQuota: t.accountQuota ?? 0,
+    }));
+  }, [tenantsData]);
 
   return (
     <div className="space-y-8">
@@ -73,14 +95,50 @@ export function PlatformOwnerDashboard() {
           <p className="text-muted-foreground mt-2">Manage your entire learning ecosystem</p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
-          <Button className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium">
-            <Plus className="w-4 h-4 mr-2" />
-            New Tenant
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Open Settings"
+                onClick={() => {
+                  if (!canManagePlatform) return;
+                  track({ name: 'po_settings_open', props: { source: 'dashboard' } });
+                  setIsSettingsOpen(true);
+                }}
+                disabled={!canManagePlatform}
+                data-lov="po-settings-cta"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
+            </TooltipTrigger>
+            {!canManagePlatform && (
+              <TooltipContent>Insufficient permissions</TooltipContent>
+            )}
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="bg-gradient-to-r from-primary to-accent-luxury shadow-medium"
+                aria-label="Create New Tenant"
+                onClick={() => {
+                  if (!canManagePlatform) return;
+                  track({ name: 'po_new_tenant_click', props: { user_id: user?.id } });
+                  setIsNewTenantOpen(true);
+                }}
+                disabled={!canManagePlatform}
+                data-lov="po-new-tenant-cta"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Tenant
+              </Button>
+            </TooltipTrigger>
+            {!canManagePlatform && (
+              <TooltipContent>Insufficient permissions</TooltipContent>
+            )}
+          </Tooltip>
         </div>
       </div>
 
@@ -121,28 +179,53 @@ export function PlatformOwnerDashboard() {
             <h3 className="text-xl font-semibold">Active Tenants</h3>
             <Button variant="outline" size="sm">View All</Button>
           </div>
-          <div className="space-y-4">
-            {tenants.map((tenant) => (
-              <div key={tenant.name} className="flex items-center justify-between p-4 rounded-lg bg-white/30 backdrop-blur-sm hover:bg-white/40 transition-all cursor-pointer">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary/30 to-accent-luxury/30 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{tenant.name}</h4>
-                    <p className="text-sm text-muted-foreground">{tenant.students} students</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Badge variant={tenant.status === 'active' ? 'default' : 'secondary'}>
-                    {tenant.status}
-                  </Badge>
-                  <span className="text-sm text-accent-success">{tenant.growth}</span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </div>
+          {(!tenants || tenants.length === 0) ? (
+            <div className="p-6 rounded-lg bg-white/40 text-center">
+              <p className="text-muted-foreground">No tenants yet.</p>
+              <p className="text-sm text-muted-foreground mt-1">Create your first tenant to get started.</p>
+              <div className="mt-4">
+                <Button
+                  onClick={() => setIsNewTenantOpen(true)}
+                  disabled={!canManagePlatform}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Create First Tenant
+                </Button>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tenants.map((tenant) => (
+                <div key={tenant.name} className="flex items-center justify-between p-4 rounded-lg bg-white/30 backdrop-blur-sm hover:bg-white/40 transition-all cursor-pointer">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary/30 to-accent-luxury/30 rounded-lg flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{tenant.name}</h4>
+                      <p className="text-sm text-muted-foreground">{tenant.students} students</p>
+                      <p className={(() => {
+                        const remaining = Math.max(0, tenant.accountQuota - tenant.usedSeats);
+                        const ratio = tenant.accountQuota > 0 ? remaining / tenant.accountQuota : 1;
+                        return `text-xs ${remaining === 0 ? 'text-red-600' : ratio <= 0.1 ? 'text-amber-600' : 'text-muted-foreground'}`;
+                      })()}>
+                        Seats: {tenant.usedSeats} / {tenant.accountQuota}
+                        {tenant.accountQuota > 0 && (
+                          <span className="ml-2">({Math.max(0, tenant.accountQuota - tenant.usedSeats)} remaining)</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant={tenant.status === 'active' ? 'default' : 'secondary'}>
+                      {tenant.status}
+                    </Badge>
+                    <span className="text-sm text-accent-success">{tenant.growth}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* System Health */}
@@ -194,6 +277,10 @@ export function PlatformOwnerDashboard() {
           <CourseManagement />
         </TabsContent>
       </Tabs>
+
+      {/* Overlays */}
+      <NewTenantModal open={isNewTenantOpen} onOpenChange={setIsNewTenantOpen} canManage={!!canManagePlatform} />
+      <SettingsDrawer open={isSettingsOpen} onOpenChange={setIsSettingsOpen} canManage={!!canManagePlatform} />
     </div>
   );
 }
