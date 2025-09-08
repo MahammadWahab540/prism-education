@@ -16,6 +16,7 @@ import LearningPage from '@/pages/LearningPage';
 import CourseManagement from '@/pages/CourseManagement';
 import Capstone from '@/pages/Capstone';
 import CapstoneDetailView from '@/pages/CapstoneDetailView';
+import CapstoneInstance from '@/pages/CapstoneInstance';
 import Tenants from '@/pages/Tenants';
 import Analytics from '@/pages/Analytics';
 import SystemUsers from '@/pages/SystemUsers';
@@ -50,7 +51,7 @@ function AppContent() {
                   <Route path="/learn/:skillId/:stageId" element={<LearningPage />} />
                   <Route path="/course-management" element={<CourseManagement />} />
                   <Route path="/capstone/:capstoneId" element={<Capstone />} />
-                  <Route path="/capstone-instance/:instanceId" element={<CapstoneDetailView />} />
+                  <Route path="/capstone-instance/:instanceId" element={<CapstoneInstance />} />
                   <Route path="/tenants" element={<Tenants />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/tenant-analytics" element={<TenantAnalytics />} />

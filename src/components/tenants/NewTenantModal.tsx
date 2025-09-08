@@ -73,7 +73,7 @@ export function NewTenantModal({ open, onOpenChange, canManage }: NewTenantModal
     track({ name: 'po_new_tenant_submit', props: { tenant_name: values.name, slug: values.slug } });
     track({ name: 'tenant_create_submit', props: { account_quota: values.accountQuota, plan: values.plan } });
     try {
-      const tenant = await mutateAsync(values);
+      const tenant = await mutateAsync(values as any);
       track({ name: 'po_new_tenant_success', props: { tenant_id: tenant.id } });
       track({ name: 'tenant_create_success', props: { tenant_id: tenant.id, account_quota: values.accountQuota } });
       if (openAt.current) {

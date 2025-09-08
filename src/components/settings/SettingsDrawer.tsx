@@ -65,7 +65,7 @@ export function SettingsDrawer({ open, onOpenChange, canManage }: SettingsDrawer
     const values = form.getValues();
     track({ name: 'po_settings_save', props: { sections: ['general', 'billing', 'theme', 'roles'] } });
     try {
-      await mutateAsync(values);
+      await mutateAsync(values as PlatformSettings);
       toast({ title: 'Settings saved.' });
       onOpenChange(false);
     } catch {
