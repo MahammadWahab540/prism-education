@@ -42,6 +42,16 @@ type SkillIcon = {
   bg?: string | null;
 }
 
+// Career choices catalog (can be extended)
+const CAREER_OPTIONS = [
+  'Software Engineer',
+  'Data Scientist',
+  'Product Manager',
+  'DevOps Engineer',
+  'Financial Analyst',
+  'Other',
+];
+
 // Helpers: emoji, image processing
 const RECENT_EMOJI_KEY = 'nw.skill.recentEmoji';
 function getEmojiCatalog(): string[] {
@@ -227,7 +237,7 @@ function MultiTenantCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[9999] max-h-[400px] min-w-[12rem] overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg shadow-black/5 outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 p-0 w-[420px] mb-12"
+        className="z-[9999] max-h-[400px] min-w-[12rem] overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-muted dark:bg-gray-900 text-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 p-0 w-[420px] mb-12"
         align="start"
       >
         <Command shouldFilter={false}>
@@ -272,6 +282,85 @@ function MultiTenantCombobox({
   );
 }
 
+function MultiCareerSelect({
+  value,
+  onChange,
+  placeholder = 'Select career choices…',
+}: {
+  value: string[];
+  onChange: (val: string[]) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return CAREER_OPTIONS;
+    return CAREER_OPTIONS.filter((c) => c.toLowerCase().includes(q));
+  }, [query]);
+
+  const isSelected = (c: string) => value.includes(c);
+  const toggle = (c: string) => {
+    if (isSelected(c)) onChange(value.filter((v) => v !== c));
+    else onChange([...value, c]);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between h-auto min-h-10 py-2"
+        >
+          <div className="flex flex-wrap items-center gap-1 text-left">
+            {value.length === 0 && <span className="text-muted-foreground">{placeholder}</span>}
+            {value.map((c) => (
+              <Badge key={c} variant="secondary" className="flex items-center gap-1">
+                {c}
+              </Badge>
+            ))}
+          </div>
+          <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="z-[9999] max-h-[300px] w-[320px] p-0">
+        <Command shouldFilter={false}>
+          <div className="p-2 border-b flex items-center gap-2">
+            <CommandInput placeholder="Search careers" value={query} onValueChange={setQuery} />
+          </div>
+          <CommandList role="listbox" className="max-h-none">
+            <div className="py-1">
+              {filtered.map((opt) => {
+                const selected = isSelected(opt);
+                return (
+                  <CommandItem
+                    key={opt}
+                    role="option"
+                    aria-selected={selected}
+                    onSelect={() => toggle(opt)}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={selected} aria-label={`Select ${opt}`} />
+                      <span>{opt}</span>
+                    </div>
+                    {selected && <Check className="w-4 h-4" />}
+                  </CommandItem>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="px-3 py-2 text-sm text-muted-foreground">No matches</div>
+              )}
+            </div>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 interface Skill {
   id: string;
   name: string;
@@ -280,6 +369,7 @@ interface Skill {
   tenantId?: string;
   tenants?: TenantOption[];
   icon?: SkillIcon;
+  careerChoices?: string[];
   status: 'draft' | 'public';
   stages: Stage[];
   createdAt: Date;
@@ -313,6 +403,7 @@ function loadSkills(): Skill[] {
       tenantId: s.tenantId,
       tenants: s.tenants || [],
       icon: s.icon || { type: 'none', bg: null },
+      careerChoices: Array.isArray(s.careerChoices) ? s.careerChoices : [],
       status: s.status === 'public' ? 'public' : 'draft',
       stages: (s.stages || []).map((st: any) => ({
         id: st.id,
@@ -389,6 +480,7 @@ export function SkillManagement() {
     tenantId: ''
   });
   const [selectedTenants, setSelectedTenants] = useState<TenantOption[]>([]);
+  const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
   const [iconState, setIconState] = useState<SkillIcon>({ type: 'none', bg: null });
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [draftIcon, setDraftIcon] = useState<SkillIcon>({ type: 'none', bg: null });
@@ -418,6 +510,7 @@ export function SkillManagement() {
       ...newSkill,
       tenants: newSkill.scope === 'Tenant' ? selectedTenants : [],
       icon: iconState,
+      careerChoices: selectedCareers,
       status: 'draft',
       stages: [],
       createdAt: new Date()
@@ -436,6 +529,7 @@ export function SkillManagement() {
       tenantId: ''
     });
     setSelectedTenants([]);
+    setSelectedCareers([]);
     setIconState({ type: 'none', bg: null });
   };
 
@@ -603,7 +697,7 @@ export function SkillManagement() {
                         )}
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="z-[9999] w-[420px] p-0 rounded-lg border bg-popover shadow-lg">
+                    <PopoverContent className="z-[9999] w-[420px] p-0 rounded-lg border bg-muted dark:bg-gray-900 text-foreground shadow-md">
                       <div className="p-3 border-b flex items-center justify-between">
                         <div className="font-medium">Choose icon</div>
                         {iconState.type !== 'none' && (
@@ -751,6 +845,11 @@ export function SkillManagement() {
                   </div>
                 )}
               </div>
+              {/* Career Choices Multi-select */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Career Choices</label>
+                <MultiCareerSelect value={selectedCareers} onChange={setSelectedCareers} />
+              </div>
               <Button onClick={handleCreateSkill} className="w-full">
                 Create Skill
               </Button>
@@ -815,6 +914,13 @@ export function SkillManagement() {
                     <span>{skill.stages.length} stages</span>
                     <span>{skill.createdAt.toLocaleDateString()}</span>
                   </div>
+                  {skill.careerChoices && skill.careerChoices.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {skill.careerChoices.map((c) => (
+                        <Badge key={c} variant="outline">{c}</Badge>
+                      ))}
+                    </div>
+                  )}
                   
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TubelightNavbar } from '@/components/ui/tubelight-navbar';
@@ -56,6 +56,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfilePanel } from '@/contexts/ProfilePanelContext';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTenants, TenantsQueryKey, Tenant as PlatformTenant, TenantCategory } from '@/services/tenants';
 
 const chartConfig = {
   users: {
@@ -85,18 +87,24 @@ export function AnalyticsDashboard() {
   const [selectedTenant, setSelectedTenant] = useState<string>(
     isPlatformOwner ? '' : user?.tenantId || 'tenant-1'
   );
+  const [tenantCategory, setTenantCategory] = useState<TenantCategory | 'all'>('all');
   const [tenantSearchTerm, setTenantSearchTerm] = useState('');
   const [isStudentActivityOpen, setIsStudentActivityOpen] = useState(false);
   const [activitySearchTerm, setActivitySearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('engagement');
   const [activityFilter, setActivityFilter] = useState('all');
 
-  // Mock tenants data for platform owner
-  const [tenants] = useState([
-    { id: 'tenant-1', name: 'University of Technology', domain: 'tech.edu', studentCount: 5 },
-    { id: 'tenant-2', name: 'Business School International', domain: 'bschool.edu', studentCount: 8 },
-    { id: 'tenant-3', name: 'Medical University', domain: 'meduni.edu', studentCount: 12 },
-  ]);
+  // Real tenants for platform owner
+  const { data: tenantsData = [] } = useQuery({ queryKey: TenantsQueryKey, queryFn: fetchTenants });
+  const tenants = useMemo(() => {
+    return (tenantsData as PlatformTenant[]).map((t) => ({
+      id: t.id,
+      name: t.name,
+      domain: `${t.slug}.example.com`,
+      studentCount: t.usedSeats ?? 0,
+      category: t.category as TenantCategory,
+    }));
+  }, [tenantsData]);
 
   // Mock student activity data
   const [studentActivityData] = useState([
@@ -237,9 +245,11 @@ export function AnalyticsDashboard() {
   ];
 
   const selectedTenantData = tenants.find(t => t.id === selectedTenant);
-  const filteredTenants = tenants.filter(tenant => 
-    tenant.name.toLowerCase().includes(tenantSearchTerm.toLowerCase())
-  );
+  const filteredTenants = tenants.filter(tenant => {
+    const matchesSearch = tenant.name.toLowerCase().includes(tenantSearchTerm.toLowerCase());
+    const matchesCategory = tenantCategory === 'all' ? true : tenant.category === tenantCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   // Filter student activity by tenant and search
   const tenantFilteredActivity = isPlatformOwner 
@@ -342,6 +352,22 @@ export function AnalyticsDashboard() {
                                 </div>
                               </SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Category</span>
+                        <Select value={tenantCategory} onValueChange={(v) => setTenantCategory(v as any)}>
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="All Categories" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Categories</SelectItem>
+                            <SelectItem value="Business School">Business School</SelectItem>
+                            <SelectItem value="Engineering">Engineering</SelectItem>
+                            <SelectItem value="Arts">Arts</SelectItem>
+                            <SelectItem value="Test Tenants">Test Tenants</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

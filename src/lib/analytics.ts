@@ -11,7 +11,11 @@ type AnalyticsEvent =
   | { name: 'seat_request_submitted'; props: { tenant_id: string; requested_delta: number } }
   | { name: 'skill_mgmt_tenant_filter_open'; props: {} }
   | { name: 'skill_mgmt_tenant_filter_select'; props: { slug: string; category: string } }
-  | { name: 'skill_mgmt_tenant_filter_clear_all'; props: {} };
+  | { name: 'skill_mgmt_tenant_filter_clear_all'; props: {} }
+  // Tenant management actions
+  | { name: 'tenants_credentials_sent'; props: { tenantId: string; orgName?: string; actorId?: string; method: 'email' | 'copy' } }
+  | { name: 'tenants_updated'; props: { tenantId: string; orgName?: string; actorId?: string } }
+  | { name: 'tenants_deleted'; props: { tenantId: string; orgName?: string; actorId?: string; hard?: boolean } };
 
 export function track(evt: AnalyticsEvent) {
   // In lieu of a real analytics client, log to console

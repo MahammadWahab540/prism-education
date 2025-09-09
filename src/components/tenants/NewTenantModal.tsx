@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/components/ui/use-toast';
 import { Form, FormField, FormItem, FormLabel, FormMessage, FormControl } from '@/components/ui/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTenant, newTenantSchema, TenantsQueryKey } from '@/services/tenants';
+import { createTenant, newTenantSchema, TenantsQueryKey, TenantCategory } from '@/services/tenants';
 import { track } from '@/lib/analytics';
 
 export interface NewTenantModalProps {
@@ -44,6 +44,7 @@ export function NewTenantModal({ open, onOpenChange, canManage }: NewTenantModal
       plan: 'pro',
       status: 'active',
       accountQuota: 5,
+      category: 'Other' as TenantCategory,
     },
     mode: 'onChange',
   });
@@ -117,9 +118,34 @@ export function NewTenantModal({ open, onOpenChange, canManage }: NewTenantModal
                       <Input placeholder="Acme Corp" {...field} aria-required="true" />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="category"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Category</FormLabel>
+            <Select value={field.value} onValueChange={field.onChange} disabled={disabled}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="Business School">Business School</SelectItem>
+                <SelectItem value="Engineering">Engineering</SelectItem>
+                <SelectItem value="Arts">Arts</SelectItem>
+                <SelectItem value="Test Tenants">Test Tenants</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
               <FormField
                 control={form.control}

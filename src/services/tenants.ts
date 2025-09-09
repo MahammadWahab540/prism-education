@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export type TenantStatus = 'active' | 'paused';
 export type TenantPlan = 'free' | 'pro' | 'enterprise';
+export type TenantCategory = 'Business School' | 'Engineering' | 'Arts' | 'Test Tenants' | 'Other';
 
 export interface NewTenantInput {
   name: string;
@@ -11,12 +12,16 @@ export interface NewTenantInput {
   plan: TenantPlan;
   status: TenantStatus;
   accountQuota: number;
+  category: TenantCategory;
 }
 
 export interface Tenant extends NewTenantInput {
   id: string;
   createdAt: string;
   usedSeats: number;
+  notes?: string;
+  requirePasswordReset?: boolean;
+  lastCredentialsSentAt?: string;
 }
 
 const STORAGE_KEY = 'platform.tenants';
@@ -39,6 +44,7 @@ export const newTenantSchema = z.object({
     .int('Enter a whole number')
     .min(1, 'Must be at least 1')
     .max(10000, 'Too large'),
+  category: z.enum(['Business School', 'Engineering', 'Arts', 'Test Tenants', 'Other']),
 });
 
 function normalizeTenant(t: any): Tenant {
@@ -53,6 +59,14 @@ function normalizeTenant(t: any): Tenant {
     status: t.status,
     accountQuota: typeof t.accountQuota === 'number' ? t.accountQuota : 5,
     usedSeats: typeof t.usedSeats === 'number' ? t.usedSeats : 0,
+    category: ((): TenantCategory => {
+      const c = t.category;
+      const allowed: TenantCategory[] = ['Business School', 'Engineering', 'Arts', 'Test Tenants', 'Other'];
+      return allowed.includes(c) ? c : 'Other';
+    })(),
+    notes: typeof t.notes === 'string' ? t.notes : undefined,
+    requirePasswordReset: !!t.requirePasswordReset,
+    lastCredentialsSentAt: t.lastCredentialsSentAt,
   };
 }
 
@@ -211,3 +225,182 @@ export async function patchSettings(partial: Partial<PlatformSettings>): Promise
 
 export const TenantsQueryKey = ['platform', 'tenants'] as const;
 export const SettingsQueryKey = ['platform', 'settings'] as const;
+
+// -------- Extensions for management actions --------
+
+export interface UpdateTenantInput {
+  name?: string;
+  slug?: string;
+  adminEmail?: string;
+  status?: TenantStatus;
+  accountQuota?: number;
+  notes?: string;
+  requirePasswordReset?: boolean;
+  category?: TenantCategory;
+}
+
+export const updateTenantSchema = z.object({
+  name: z.string().min(2).optional(),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Use kebab-case, lowercase letters, numbers, dashes')
+    .min(2)
+    .max(30)
+    .optional(),
+  adminEmail: z.string().email('Invalid email').optional(),
+  status: z.enum(['active', 'paused']).optional(),
+  accountQuota: z.number().int().min(1).max(10000).optional(),
+  notes: z.string().max(5000).optional(),
+  requirePasswordReset: z.boolean().optional(),
+  category: z.enum(['Business School', 'Engineering', 'Arts', 'Test Tenants', 'Other']).optional(),
+});
+
+function findTenantIndex(tenants: Tenant[], tenantId: string) {
+  const idx = tenants.findIndex((x) => x.id === tenantId);
+  if (idx === -1) throw new ApiError('Tenant not found', 404);
+  return idx;
+}
+
+export async function updateTenant(tenantId: string, input: UpdateTenantInput): Promise<Tenant> {
+  const parsed = updateTenantSchema.safeParse(input);
+  if (!parsed.success) throw new ApiError('Validation failed', 400);
+
+  await new Promise((r) => setTimeout(r, 300));
+  const tenants = loadTenants();
+  const idx = findTenantIndex(tenants, tenantId);
+  const current = tenants[idx];
+
+  // If changing slug, check uniqueness
+  if (input.slug && input.slug !== current.slug) {
+    const duplicate = tenants.some((t) => t.slug.toLowerCase() === input.slug!.toLowerCase());
+    if (duplicate) throw new ApiError('Slug already in use', 409);
+  }
+
+  // If switching to active, require adminEmail present
+  if (input.status === 'active' && !(input.adminEmail ?? current.adminEmail)) {
+    throw new ApiError('Admin email required to activate tenant', 400);
+  }
+
+  const updated: Tenant = normalizeTenant({ ...current, ...input });
+  tenants[idx] = updated;
+  saveTenants(tenants);
+  logAudit({
+    type: 'TENANT_UPDATED',
+    tenantId,
+    before: current,
+    after: updated,
+  });
+  return updated;
+}
+
+export interface DeleteTenantOptions { hard?: boolean; actorId?: string }
+
+export async function deleteTenant(tenantId: string, options?: DeleteTenantOptions): Promise<{ ok: true }>
+{
+  const { hard = false } = options || {};
+  await new Promise((r) => setTimeout(r, 250));
+  const tenants = loadTenants();
+  const idx = findTenantIndex(tenants, tenantId);
+  const t = tenants[idx];
+  if (!hard) {
+    // Soft delete constraints: block if active and has users
+    if (t.status === 'active' && t.usedSeats > 0) {
+      const err: any = new ApiError('Cannot delete active tenant with users. Choose hard delete.', 400);
+      err.code = 'BLOCKED_SOFT_DELETE';
+      throw err;
+    }
+  }
+  const removed = tenants.splice(idx, 1)[0];
+  saveTenants(tenants);
+  logAudit({ type: 'TENANT_DELETED', tenantId, hard, snapshot: removed });
+  return { ok: true } as const;
+}
+
+export type CredentialMethod = 'email' | 'copy';
+export interface CredentialPayload {
+  to: string;
+  cc?: string;
+  subject: string;
+  message: string;
+  method: CredentialMethod;
+  actorId?: string;
+}
+
+export async function sendCredentials(
+  tenantId: string,
+  payload: CredentialPayload
+): Promise<{ ok: true; link?: string; info?: string }>
+{
+  const { to, cc, subject, message, method } = payload;
+  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    throw new ApiError('Invalid recipient email', 400);
+  }
+  if (!subject?.trim() || !message?.trim()) {
+    throw new ApiError('Subject and message are required', 400);
+  }
+
+  await new Promise((r) => setTimeout(r, 400));
+  const tenants = loadTenants();
+  const idx = findTenantIndex(tenants, tenantId);
+  const t = tenants[idx];
+
+  if (t.status !== 'active') {
+    throw new ApiError('Activate tenant to send credentials', 400);
+  }
+
+  let info: string | undefined;
+  if (t.lastCredentialsSentAt) {
+    const last = new Date(t.lastCredentialsSentAt).getTime();
+    const now = Date.now();
+    if (now - last < 10 * 60 * 1000) {
+      info = 'Credentials were sent recently (within 10 minutes).';
+    }
+  }
+
+  // Generate a credential link token
+  const token = Math.random().toString(36).slice(2);
+  const link = `https://${t.slug}.example.com/login?token=${token}`;
+
+  tenants[idx] = { ...t, lastCredentialsSentAt: new Date().toISOString() };
+  saveTenants(tenants);
+
+  logAudit({
+    type: 'TENANT_CREDENTIALS_SENT',
+    tenantId,
+    to,
+    cc,
+    method,
+    link,
+  });
+
+  // We don't actually send email in this demo; we just return the link for copy method
+  return { ok: true, link: method === 'copy' ? link : undefined, info } as const;
+}
+
+// ---------- Audit log (local) ----------
+type AuditEvent =
+  | { type: 'TENANT_CREDENTIALS_SENT'; tenantId: string; to: string; cc?: string; method: CredentialMethod; link?: string }
+  | { type: 'TENANT_UPDATED'; tenantId: string; before: Tenant; after: Tenant }
+  | { type: 'TENANT_DELETED'; tenantId: string; hard: boolean; snapshot: Tenant };
+
+const AUDIT_KEY = 'platform.auditLog';
+
+function logAudit(evt: AuditEvent) {
+  try {
+    const raw = localStorage.getItem(AUDIT_KEY);
+    const list = raw ? (JSON.parse(raw) as any[]) : [];
+    list.push({ ...evt, at: new Date().toISOString() });
+    localStorage.setItem(AUDIT_KEY, JSON.stringify(list));
+  } catch {
+    // noop
+  }
+}
+
+export function fetchAuditLog(): Array<AuditEvent & { at: string }> {
+  try {
+    const raw = localStorage.getItem(AUDIT_KEY);
+    return raw ? (JSON.parse(raw) as any[]) : [];
+  } catch {
+    return [];
+  }
+}
