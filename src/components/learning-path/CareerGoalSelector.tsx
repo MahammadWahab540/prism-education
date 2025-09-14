@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Target, TrendingUp, Users, Code, Palette, BarChart, Shield } from 'lucide-react';
-import { mockCareerGoals } from '@/lib/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCareers } from '@/hooks/useCareers';
 
 interface CareerGoalSelectorProps {
   onGoalSelect: (goal: any) => void;
@@ -23,15 +24,25 @@ const goalIcons = {
 export function CareerGoalSelector({ onGoalSelect }: CareerGoalSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { user } = useAuth();
+  const careers = useCareers();
 
-  const filteredGoals = mockCareerGoals.filter(goal => {
+  const tenantId = user?.tenantId;
+  const categories = careers.listCategoriesForTenant(tenantId);
+  const goals = careers.listGoalsForTenant(tenantId);
+
+  const goalsWithCategory = useMemo(() => goals.map(g => ({
+    ...g,
+    categoryName: categories.find(c => c.id === g.categoryId)?.name || 'Other',
+  })), [goals, categories]);
+
+  const filteredGoals = goalsWithCategory.filter(goal => {
     const matchesSearch = goal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         goal.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || goal.category === selectedCategory;
-    return matchesSearch && matchesCategory && goal.is_active;
+      (goal.shortDescription || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (goal.longDescription || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || goal.categoryName === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
-
-  const categories = [...new Set(mockCareerGoals.map(goal => goal.category))];
 
   return (
     <div className="space-y-6">
@@ -73,7 +84,7 @@ export function CareerGoalSelector({ onGoalSelect }: CareerGoalSelectorProps) {
             >
               All Categories
             </Button>
-            {categories.map((category) => (
+            {Array.from(new Set(categories.map(c => c.name))).map((category) => (
               <Button
                 key={category}
                 variant={selectedCategory === category ? "default" : "outline"}
@@ -111,7 +122,7 @@ export function CareerGoalSelector({ onGoalSelect }: CareerGoalSelectorProps) {
                           {goal.name}
                         </CardTitle>
                         <Badge variant="outline" className="mt-1">
-                          {goal.category}
+                          {goal.categoryName}
                         </Badge>
                       </div>
                     </div>
@@ -119,22 +130,22 @@ export function CareerGoalSelector({ onGoalSelect }: CareerGoalSelectorProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground line-clamp-3">
-                    {goal.description}
+                    {goal.shortDescription || goal.longDescription || '—'}
                   </p>
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Avg. Duration</span>
-                      <span className="font-medium">{goal.estimated_duration}</span>
+                      <span className="font-medium">{goal.durationMinMonths}-{goal.durationMaxMonths} months</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Difficulty</span>
                       <Badge variant={
-                        goal.difficulty_level === 'Beginner' ? 'secondary' :
-                        goal.difficulty_level === 'Intermediate' ? 'default' : 
+                        goal.difficulty === 'Beginner' ? 'secondary' :
+                        goal.difficulty === 'Intermediate' ? 'default' : 
                         'destructive'
                       }>
-                        {goal.difficulty_level}
+                        {goal.difficulty}
                       </Badge>
                     </div>
                   </div>

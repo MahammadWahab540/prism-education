@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RaiseTicketModal } from './RaiseTicketModal';
 import { Search, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import { mockSkills, mockGoalSkillMap } from '@/lib/mockData';
+import { getAllSkills } from '@/lib/skillsStore';
 import { useLearningPath } from '@/contexts/LearningPathContext';
 
 interface SkillsSelectorProps {
@@ -23,11 +24,26 @@ export function SkillsSelector({ careerGoal, onSkillsSelect, selectedSkills }: S
   const { markOnboardingComplete } = useLearningPath();
 
   useEffect(() => {
-    // Mock API call to get skills for the career goal
+    // If goal comes from dynamic careers store, prefer its linked skills
+    if (careerGoal && Array.isArray(careerGoal.linkedSkillIds) && careerGoal.linkedSkillIds.length > 0) {
+      const storeSkills = getAllSkills();
+      const mapped = careerGoal.linkedSkillIds
+        .map((id: string) => storeSkills.find(s => String(s.id) === String(id)))
+        .filter(Boolean)
+        .map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          category: s.scope || 'Global',
+          difficulty: 'Beginner',
+          is_active: true,
+        }));
+      setAvailableSkills(mapped);
+      return;
+    }
+    // Fallback to mock mapping for legacy goals
     const skillMappings = mockGoalSkillMap.filter(mapping => mapping.goal_id === careerGoal.id);
     const skillIds = skillMappings.map(mapping => mapping.skill_id);
     const skills = mockSkills.filter(skill => skillIds.includes(skill.id) && skill.is_active);
-    
     setAvailableSkills(skills);
   }, [careerGoal.id]);
 

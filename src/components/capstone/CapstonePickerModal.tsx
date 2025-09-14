@@ -129,7 +129,7 @@ export function CapstonePickerModal({ open, onOpenChange, skillId, skillName, on
     if (data.status === 'UNLOCKED') {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data.suggestions.map(s => (
+          {data.suggestions.slice(0,3).map(s => (
             <Card key={s.id} className={selectedId === s.id ? 'ring-2 ring-primary' : ''}>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">

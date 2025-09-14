@@ -19,6 +19,7 @@ import CapstoneDetailView from '@/pages/CapstoneDetailView';
 import CapstoneInstance from '@/pages/CapstoneInstance';
 import Tenants from '@/pages/Tenants';
 import Analytics from '@/pages/Analytics';
+import CareerManagement from '@/pages/CareerManagement';
 import SystemUsers from '@/pages/SystemUsers';
 import Students from '@/pages/Students';
 import AdminCapstoneSubmissions from '@/pages/AdminCapstoneSubmissions';
@@ -54,6 +55,7 @@ function AppContent() {
                   <Route path="/capstone-instance/:instanceId" element={<CapstoneInstance />} />
                   <Route path="/tenants" element={<Tenants />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/career-management" element={<CareerManagement />} />
                   <Route path="/tenant-analytics" element={<TenantAnalytics />} />
                   <Route path="/tenant-reports" element={<TenantReports />} />
                   <Route path="/admin/capstones/submissions" element={<AdminCapstoneSubmissions />} />

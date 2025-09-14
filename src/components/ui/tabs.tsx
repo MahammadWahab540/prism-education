@@ -12,8 +12,11 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
-      className
+      className,
+      // Standardized tabs container styling via tokens
+      "inline-flex items-center justify-center gap-1 p-1",
+      "bg-muted text-muted-foreground border border-border",
+      "rounded-[var(--radius)] shadow-soft"
     )}
     {...props}
   />
@@ -27,8 +30,18 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
-      className
+      className,
+      // Standardized trigger: pill, height, padding
+      "inline-flex items-center justify-center whitespace-nowrap gap-2",
+      "rounded-full h-10 px-3 text-sm font-medium",
+      // Focus and disabled states
+      "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+      // Default + hover + active states using tokens
+      "text-muted-foreground",
+      // Inactive → hover to primary with inverted text
+      "data-[state=inactive]:hover:bg-primary data-[state=inactive]:hover:text-primary-foreground hover-text-invert",
+      // Active → primary with inverted text
+      "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-elevated"
     )}
     {...props}
   />

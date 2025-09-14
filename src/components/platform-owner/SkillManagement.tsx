@@ -31,6 +31,8 @@ import {
   Check,
   X
 } from 'lucide-react';
+import { useCapstones } from '@/hooks/useCapstones';
+import CapstoneEditorDialog from './CapstoneEditorDialog';
 
 type TenantOption = { name: string; slug: string; category: 'Business School' | 'Engineering' | 'Arts' | 'Test Tenants' | string };
 
@@ -428,6 +430,7 @@ function saveSkills(list: Skill[]) {
 }
 
 export function SkillManagement() {
+  const { listTemplatesBySkill } = useCapstones();
   const [skills, setSkills] = useState<Skill[]>(() => {
     const existing = loadSkills();
     if (existing.length > 0) return existing;
@@ -1136,6 +1139,9 @@ export function SkillManagement() {
                     </Button>
                   </Card>
                 )}
+
+                {/* Capstones integrated into Stage Builder */}
+                <CapstonesForSkillSection skillId={selectedSkill.id} />
               </div>
             </div>
           ) : (
@@ -1147,6 +1153,57 @@ export function SkillManagement() {
           )}
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function CapstonesForSkillSection({ skillId }: { skillId: string }) {
+  const { state } = useCapstones();
+  const [open, setOpen] = React.useState(false);
+  const configs = React.useMemo(() => state.configs.filter(c => c.skillId === skillId), [state.configs, skillId]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-semibold">Capstones for this Skill</h3>
+          <p className="text-sm text-muted-foreground">Create and manage capstones directly within Stage Builder.</p>
+        </div>
+        <Button onClick={() => setOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          New Capstone
+        </Button>
+      </div>
+      {configs.length === 0 ? (
+        <Card className="p-6">
+          <div className="text-sm text-muted-foreground">No capstones yet for this skill. Create one to get started.</div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {configs.map(c => (
+            <Card key={c.id} className="hover:shadow-elevated">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span>{c.title}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{c.difficulty}</Badge>
+                    <Badge className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+                      c.status === 'Published'
+                        ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20'
+                        : 'bg-muted text-foreground/70 border-transparent'
+                    }`}>{c.status}</Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm text-muted-foreground line-clamp-3">{c.overview.description}</div>
+                <div className="text-xs text-muted-foreground">Deliverables: {c.expectedDeliverables.join(', ')}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      <CapstoneEditorDialog open={open} onOpenChange={setOpen} skillId={skillId} />
     </div>
   );
 }

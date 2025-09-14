@@ -44,6 +44,8 @@
     --border: 240 30% 90%;
     --input: 245 35% 94%;
     --ring: 235 85% 55%;
+    /* Tabs */
+    --tab-hover-bg: var(--primary-soft);
     
     /* Reference-Matched Shadows */
     --shadow-soft: 0 2px 12px hsla(235 50% 50% / 0.08);
@@ -118,6 +120,8 @@
     --border: 225 15% 18%;
     --input: 225 15% 15%;
     --ring: 235 85% 55%;
+    /* Tabs */
+    --tab-hover-bg: var(--primary-soft);
     
     /* Dark Mode Shadows */
     --shadow-soft: 0 2px 12px hsla(225 50% 2% / 0.5);
@@ -168,6 +172,24 @@
 }
 
 @layer components {
+  /* Utility: invert text/icon color on hover to ensure contrast on dark/primary backgrounds */
+  .hover-text-invert:hover {
+    color: hsl(var(--hover-text-color-2)) !important; /* typically white */
+  }
+  .hover-text-invert:hover svg {
+    color: inherit;
+    stroke: currentColor;
+    fill: currentColor;
+  }
+  /* Group variant for card-based interactions */
+  .group:hover .group-hover-text-invert {
+    color: hsl(var(--hover-text-color-2)) !important;
+  }
+  .group:hover .group-hover-text-invert svg {
+    color: inherit;
+    stroke: currentColor;
+    fill: currentColor;
+  }
   /* Premium Glass Effects */
   .glass-card {
     background: var(--card-glass);

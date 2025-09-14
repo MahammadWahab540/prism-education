@@ -24,6 +24,14 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Enforce standardized Tabs styling by preventing per-usage overrides on TabsTrigger
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "JSXOpeningElement[name.name='TabsTrigger'] JSXAttribute[name.name='className']",
+          message: "Do not set className on TabsTrigger; use the shared Tabs styles (tokens).",
+        }
+      ]
     },
   }
 );

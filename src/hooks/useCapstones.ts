@@ -431,6 +431,8 @@ export function useCapstones() {
       tenantId: opts.tenantId,
       ownerVisible: true,
       tenantAdminVisible: true,
+      reviewers: [],
+      escalation: { escalated: false },
     };
     setState(prev => ({ ...prev, instanceSubmissions: { ...prev.instanceSubmissions, [instanceId]: [...(prev.instanceSubmissions[instanceId] || []), sub] }, instances: prev.instances.map(i => i.id === instanceId ? { ...i, status: 'Submitted', updatedAt: new Date().toISOString() } : i) }));
     return sub;
@@ -461,6 +463,43 @@ export function useCapstones() {
     setState(prev => {
       const list = prev.instanceSubmissions[instanceId] || [];
       const updated = list.map(s => s.id === submissionId ? { ...s, status } : s);
+      return { ...prev, instanceSubmissions: { ...prev.instanceSubmissions, [instanceId]: updated } };
+    });
+  };
+
+  // Assign a reviewer to a submission
+  const assignReviewer = (instanceId: string, submissionId: string, reviewer: string) => {
+    if (!reviewer.trim()) return;
+    setState(prev => {
+      const list = prev.instanceSubmissions[instanceId] || [];
+      const updated = list.map(s => s.id === submissionId
+        ? { ...s, reviewers: Array.from(new Set([...(s.reviewers || []), reviewer.trim()])) }
+        : s
+      );
+      return { ...prev, instanceSubmissions: { ...prev.instanceSubmissions, [instanceId]: updated } };
+    });
+  };
+
+  // Remove a reviewer from a submission
+  const removeReviewer = (instanceId: string, submissionId: string, reviewer: string) => {
+    setState(prev => {
+      const list = prev.instanceSubmissions[instanceId] || [];
+      const updated = list.map(s => s.id === submissionId
+        ? { ...s, reviewers: (s.reviewers || []).filter(r => r !== reviewer) }
+        : s
+      );
+      return { ...prev, instanceSubmissions: { ...prev.instanceSubmissions, [instanceId]: updated } };
+    });
+  };
+
+  // Set escalation state and optional reason
+  const setSubmissionEscalation = (instanceId: string, submissionId: string, escalated: boolean, reason?: string) => {
+    setState(prev => {
+      const list = prev.instanceSubmissions[instanceId] || [];
+      const updated = list.map(s => s.id === submissionId
+        ? { ...s, escalation: { escalated, reason, createdAt: escalated ? new Date().toISOString() : s.escalation?.createdAt } }
+        : s
+      );
       return { ...prev, instanceSubmissions: { ...prev.instanceSubmissions, [instanceId]: updated } };
     });
   };
@@ -544,6 +583,9 @@ export function useCapstones() {
     getInstance,
     addInstanceSubmission,
     updateInstanceSubmissionStatus,
+    assignReviewer,
+    removeReviewer,
+    setSubmissionEscalation,
     upsertTemplate,
     listAdminSubmissions,
     updateStageChecklist,

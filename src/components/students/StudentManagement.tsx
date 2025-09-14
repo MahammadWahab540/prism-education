@@ -603,10 +603,10 @@ export function StudentManagement() {
       {/* Removed duplicate navigation (TubelightNavbar) to keep a single tab system */}
 
       <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="rounded-full">
-          <TabsTrigger value="students" className="rounded-full px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring">All Students</TabsTrigger>
-          <TabsTrigger value="progress" className="rounded-full px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring">Progress Tracking</TabsTrigger>
-          <TabsTrigger value="analytics" className="rounded-full px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring">Performance Analytics</TabsTrigger>
+        <TabsList>
+          <TabsTrigger value="students">All Students</TabsTrigger>
+          <TabsTrigger value="progress">Progress Tracking</TabsTrigger>
+          <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="space-y-6">

@@ -83,14 +83,13 @@ const getNavigationItems = (role: string) => {
       return [
         { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
         { title: 'Course Management', url: '/course-management', icon: BookOpen },
+        { title: 'Career Management', url: '/career-management', icon: Target },
         { title: 'Capstone Submissions', url: '/admin/capstones/submissions', icon: ClipboardList },
         { title: 'Tenants', url: '/tenants', icon: Building2 },
         { title: 'Students', url: '/students', icon: GraduationCap },
         { title: 'Analytics', url: '/analytics', icon: BarChart3 },
         { title: 'System Users', url: '/system-users', icon: Users },
-        { title: 'Reports', url: '/system-reports', icon: FileText },
         { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
-        { title: 'Billing', url: '/billing', icon: TrendingUp },
       ];
     case 'tenant_admin':
       return [

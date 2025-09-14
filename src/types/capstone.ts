@@ -165,4 +165,11 @@ export interface InstanceSubmission {
   tenantId?: string;
   ownerVisible: boolean;
   tenantAdminVisible: boolean;
+  // Tenant Admin workflow fields
+  reviewers?: string[];
+  escalation?: {
+    escalated: boolean;
+    reason?: string;
+    createdAt?: string;
+  };
 }
