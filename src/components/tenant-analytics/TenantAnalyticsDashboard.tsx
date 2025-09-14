@@ -685,37 +685,39 @@ export function TenantAnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: 'Excellent', key: 'excellent', value: filteredByAudience.filter(s => s.health==='excellent').length },
-                          { name: 'Good', key: 'good', value: filteredByAudience.filter(s => s.health==='good').length },
-                          { name: 'At Risk', key: 'at_risk', value: filteredByAudience.filter(s => s.health==='warning' || s.health==='critical').length },
-                        ]}
-                        dataKey="value"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        label
-                        labelLine
-                        onClick={(data) => setSegmentFilter((data as any).payload.key)}
-                      >
-                        <Cell fill="#16a34a" aria-label="Excellent" />
-                        <Cell fill="#64748B" aria-label="Good" />
-                        <Cell fill="#DC2626" aria-label="At Risk" />
-                      </Pie>
-                      <Legend verticalAlign="middle" align="right" layout="vertical" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  {segmentFilter && (
-                    <div className="mt-3 text-sm">
-                      <Badge variant="secondary" className="mr-2">Filtered: {segmentFilter === 'at_risk' ? 'At Risk' : segmentFilter.charAt(0).toUpperCase()+segmentFilter.slice(1)}</Badge>
-                      <Button variant="ghost" size="sm" onClick={() => setSegmentFilter(null)}>Clear</Button>
-                    </div>
-                  )}
+                  <>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Excellent', key: 'excellent', value: filteredByAudience.filter(s => s.health==='excellent').length },
+                            { name: 'Good', key: 'good', value: filteredByAudience.filter(s => s.health==='good').length },
+                            { name: 'At Risk', key: 'at_risk', value: filteredByAudience.filter(s => s.health==='warning' || s.health==='critical').length },
+                          ]}
+                          dataKey="value"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          label
+                          labelLine
+                          onClick={(data) => setSegmentFilter((data as any).payload.key)}
+                        >
+                          <Cell fill="#16a34a" aria-label="Excellent" />
+                          <Cell fill="#64748B" aria-label="Good" />
+                          <Cell fill="#DC2626" aria-label="At Risk" />
+                        </Pie>
+                        <Legend verticalAlign="middle" align="right" layout="vertical" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    {segmentFilter && (
+                      <div className="mt-3 text-sm">
+                        <Badge variant="secondary" className="mr-2">Filtered: {segmentFilter === 'at_risk' ? 'At Risk' : segmentFilter.charAt(0).toUpperCase()+segmentFilter.slice(1)}</Badge>
+                        <Button variant="ghost" size="sm" onClick={() => setSegmentFilter(null)}>Clear</Button>
+                      </div>
+                    )}
+                  </>
                 </ChartContainer>
               </CardContent>
             </Card>

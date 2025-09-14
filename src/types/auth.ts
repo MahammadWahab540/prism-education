@@ -8,6 +8,7 @@ export interface User {
   role: UserRole;
   tenantId?: string;
   avatar?: string;
+  permissions?: string[];
   createdAt: string;
 }
 
