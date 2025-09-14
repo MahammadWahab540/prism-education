@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
-// removed ScrollArea to avoid nested overflow containers
 import { Separator } from '@/components/ui/separator';
 import { track } from '@/lib/analytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -653,7 +652,7 @@ export function SkillManagement() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-luxury">Skill Management</h1>
+          <h1 className="text-3xl font-bold text-gradient-luxury">Active Skills</h1>
           <p className="text-muted-foreground mt-2">Create and manage learning skills across tenants</p>
         </div>
         <Dialog open={isCreateSkillOpen} onOpenChange={setIsCreateSkillOpen}>

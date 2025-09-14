@@ -1,21 +1,26 @@
-
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/AuthContext';
-import { Link, useLocation } from 'react-router-dom';
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -24,30 +29,25 @@ import {
   Settings,
   BookOpen,
   GraduationCap,
-  Calendar,
   MessageSquare,
   FileText,
-  Award,
-  TrendingUp,
-  UserCog,
-  LogOut,
-  ChevronsUpDown,
-  Plus,
-  School,
   ClipboardList,
   PieChart,
   UserCircle,
+  ChevronsUpDown,
+  Plus,
   Target,
-} from 'lucide-react';
+  LogOut,
+} from "lucide-react";
 
 const sidebarVariants = {
-  open: { width: '15rem' },
-  closed: { width: '3.05rem' },
+  open: { width: "15rem" },
+  closed: { width: "3.05rem" },
 };
 
 const contentVariants = {
-  open: { display: 'block', opacity: 1 },
-  closed: { display: 'block', opacity: 1 },
+  open: { display: "block", opacity: 1 },
+  closed: { display: "block", opacity: 1 },
 };
 
 const variants = {
@@ -64,7 +64,7 @@ const variants = {
 };
 
 const transitionProps = {
-  type: 'tween' as const,
+  type: "tween" as const,
   ease: [0.4, 0, 0.2, 1] as const,
   duration: 0.2,
   staggerChildren: 0.1,
@@ -79,33 +79,41 @@ const staggerVariants = {
 // Navigation items for each role
 const getNavigationItems = (role: string) => {
   switch (role) {
-    case 'platform_owner':
+    case "platform_owner":
       return [
-        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'Course Management', url: '/course-management', icon: BookOpen },
-        { title: 'Career Management', url: '/career-management', icon: Target },
-        { title: 'Capstone Submissions', url: '/admin/capstones/submissions', icon: ClipboardList },
-        { title: 'Tenants', url: '/tenants', icon: Building2 },
-        { title: 'Students', url: '/students', icon: GraduationCap },
-        { title: 'Analytics', url: '/analytics', icon: BarChart3 },
-        { title: 'System Users', url: '/system-users', icon: Users },
-        { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
+        { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+        { title: "Course Management", url: "/course-management", icon: BookOpen },
+        { title: "Career Management", url: "/career-management", icon: Target },
+        {
+          title: "Capstone Submissions",
+          url: "/admin/capstones/submissions",
+          icon: ClipboardList,
+        },
+        { title: "Tenants", url: "/tenants", icon: Building2 },
+        { title: "Students", url: "/students", icon: GraduationCap },
+        { title: "Analytics", url: "/analytics", icon: BarChart3 },
+        { title: "System Users", url: "/system-users", icon: Users },
+        { title: "Help & Support", url: "/help-support", icon: MessageSquare },
       ];
-    case 'tenant_admin':
+    case "tenant_admin":
       return [
-        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'Students', url: '/students', icon: GraduationCap },
-        { title: 'Capstone Submissions', url: '/admin/capstones/submissions', icon: ClipboardList },
-        { title: 'Analytics', url: '/tenant-analytics', icon: PieChart },
-        { title: 'Reports', url: '/tenant-reports', icon: FileText },
-        { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
+        { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+        { title: "Students", url: "/students", icon: GraduationCap },
+        {
+          title: "Capstone Submissions",
+          url: "/admin/capstones/submissions",
+          icon: ClipboardList,
+        },
+        { title: "Analytics", url: "/tenant-analytics", icon: PieChart },
+        { title: "Reports", url: "/tenant-analytics", icon: FileText },
+        { title: "Help & Support", url: "/help-support", icon: MessageSquare },
       ];
-    case 'student':
+    case "student":
       return [
-        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'My Skills', url: '/my-skills', icon: BookOpen },
-        { title: 'Learning Path', url: '/learning-path', icon: Target },
-        { title: 'Help & Support', url: '/help-support', icon: MessageSquare },
+        { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+        { title: "My Skills", url: "/my-skills", icon: BookOpen },
+        { title: "Learning Path", url: "/learning-path", icon: Target },
+        { title: "Help & Support", url: "/help-support", icon: MessageSquare },
       ];
     default:
       return [];
@@ -114,19 +122,27 @@ const getNavigationItems = (role: string) => {
 
 const getRoleDisplayName = (role: string) => {
   switch (role) {
-    case 'platform_owner': return 'Platform Owner';
-    case 'tenant_admin': return 'Tenant Admin';
-    case 'student': return 'Student';
-    default: return role;
+    case "platform_owner":
+      return "Platform Owner";
+    case "tenant_admin":
+      return "Tenant Admin";
+    case "student":
+      return "Student";
+    default:
+      return role;
   }
 };
 
 const getOrganizationName = (role: string, user: any) => {
   switch (role) {
-    case 'platform_owner': return 'EduPlatform';
-    case 'tenant_admin': return 'My Institution';
-    case 'student': return 'My School';
-    default: return 'Organization';
+    case "platform_owner":
+      return "EduPlatform";
+    case "tenant_admin":
+      return "My Institution";
+    case "student":
+      return "My School";
+    default:
+      return "Organization";
   }
 };
 
@@ -134,19 +150,22 @@ export function RoleSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const { user, logout } = useAuth();
   const location = useLocation();
-  
+
   if (!user) return null;
 
   const navigationItems = getNavigationItems(user.role);
   const organizationName = getOrganizationName(user.role, user);
 
+  const userInitial =
+    user?.name?.trim()?.charAt(0)?.toUpperCase() || "U";
+
   return (
     <motion.div
       className={cn(
-        'sidebar fixed left-0 z-40 h-full shrink-0 border-r bg-gradient-glass backdrop-blur-md',
+        "sidebar fixed left-0 z-40 h-full shrink-0 border-r bg-gradient-glass backdrop-blur-md",
       )}
-      initial={isCollapsed ? 'closed' : 'open'}
-      animate={isCollapsed ? 'closed' : 'open'}
+      initial={isCollapsed ? "closed" : "open"}
+      animate={isCollapsed ? "closed" : "open"}
       variants={sidebarVariants}
       transition={transitionProps}
       onMouseEnter={() => setIsCollapsed(false)}
@@ -168,55 +187,90 @@ export function RoleSidebar() {
                       size="sm"
                       className="flex w-fit items-center gap-2 px-2"
                     >
-                      <Avatar className="rounded size-4">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                          {organizationName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Avatar className="size-4">
+                              <AvatarImage
+                                src={user?.orgAvatar}
+                                alt={organizationName}
+                              />
+                              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                {organizationName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>{organizationName}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
                       <motion.li
                         variants={variants}
                         className="flex w-fit items-center gap-2"
                       >
                         {!isCollapsed && (
                           <>
-                            <p className="text-sm font-medium">{organizationName}</p>
+                            <p className="text-sm font-medium">
+                              {organizationName}
+                            </p>
                             <ChevronsUpDown className="h-4 w-4 text-muted-foreground/50" />
                           </>
                         )}
                       </motion.li>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="bg-card-glass backdrop-blur-md">
-                    {user.role === 'platform_owner' && (
+                  <DropdownMenuContent
+                    align="start"
+                    className="bg-card-glass backdrop-blur-md"
+                  >
+                    {user.role === "platform_owner" && (
                       <>
-                        <DropdownMenuItem asChild className="flex items-center gap-2">
+                        <DropdownMenuItem
+                          asChild
+                          className="flex items-center gap-2"
+                        >
                           <Link to="/system-settings">
                             <Settings className="h-4 w-4" /> System Settings
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild className="flex items-center gap-2">
+                        <DropdownMenuItem
+                          asChild
+                          className="flex items-center gap-2"
+                        >
                           <Link to="/create-tenant">
                             <Plus className="h-4 w-4" /> Create Tenant
                           </Link>
                         </DropdownMenuItem>
                       </>
                     )}
-                    {user.role === 'tenant_admin' && (
+                    {user.role === "tenant_admin" && (
                       <>
-                        <DropdownMenuItem asChild className="flex items-center gap-2">
+                        <DropdownMenuItem
+                          asChild
+                          className="flex items-center gap-2"
+                        >
                           <Link to="/tenant-settings">
-                            <Settings className="h-4 w-4" /> Institution Settings
+                            <Settings className="h-4 w-4" /> Institution
+                            Settings
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild className="flex items-center gap-2">
+                        <DropdownMenuItem
+                          asChild
+                          className="flex items-center gap-2"
+                        >
                           <Link to="/manage-users">
-                            <UserCog className="h-4 w-4" /> Manage Users
+                            <Users className="h-4 w-4" /> Manage Users
                           </Link>
                         </DropdownMenuItem>
                       </>
                     )}
-                    {user.role === 'student' && (
-                      <DropdownMenuItem asChild className="flex items-center gap-2">
+                    {user.role === "student" && (
+                      <DropdownMenuItem
+                        asChild
+                        className="flex items-center gap-2"
+                      >
                         <Link to="/profile">
                           <UserCircle className="h-4 w-4" /> My Profile
                         </Link>
@@ -231,32 +285,33 @@ export function RoleSidebar() {
             <div className="flex h-full w-full flex-col">
               <div className="flex grow flex-col gap-4">
                 <ScrollArea className="h-16 grow p-2">
-                  <div className={cn('flex w-full flex-col gap-1')}>
+                  <div className={cn("flex w-full flex-col gap-1")}>
                     {navigationItems.map((item) => {
                       const isActive = location.pathname === item.url;
                       const Icon = item.icon;
-                      
+
                       return (
                         <Link
                           key={item.title}
                           to={item.url}
                           className={cn(
-                            'flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary',
-                            isActive && 'bg-muted text-primary font-medium',
+                            "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary",
+                            isActive && "bg-muted text-primary font-medium",
                           )}
                         >
                           <Icon className="h-4 w-4" />
                           <motion.li variants={variants}>
                             {!isCollapsed && (
-                              <p className="ml-2 text-sm font-medium">{item.title}</p>
+                              <p className="ml-2 text-sm font-medium">
+                                {item.title}
+                              </p>
                             )}
                           </motion.li>
                         </Link>
                       );
                     })}
-                    
+
                     <Separator className="w-full my-2" />
-                    
                   </div>
                 </ScrollArea>
               </div>
@@ -280,37 +335,57 @@ export function RoleSidebar() {
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="w-full">
                       <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                        <Avatar className="size-4">
-                          <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" alt={user.name} />
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            {user.name?.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Avatar className="size-4">
+                                <AvatarImage
+                                  src={user?.avatar}
+                                  alt={user?.name}
+                                />
+                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                  {userInitial}
+                                </AvatarFallback>
+                              </Avatar>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p>{user?.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
                         <motion.li
                           variants={variants}
                           className="flex w-full items-center gap-2"
                         >
                           {!isCollapsed && (
                             <>
-                              <p className="text-sm font-medium truncate">{user.name}</p>
+                              <p className="text-sm font-medium truncate">
+                                {user?.name}
+                              </p>
                               <ChevronsUpDown className="ml-auto h-4 w-4 text-muted-foreground/50" />
                             </>
                           )}
                         </motion.li>
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent sideOffset={5} className="bg-card-glass backdrop-blur-md">
+                    <DropdownMenuContent
+                      sideOffset={5}
+                      className="bg-card-glass backdrop-blur-md"
+                    >
                       <div className="flex flex-row items-center gap-2 p-2">
                         <Avatar className="size-6">
-                          <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" alt={user.name} />
+                          <AvatarImage src={user?.avatar} alt={user?.name} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
-                            {user.name?.charAt(0)}
+                            {userInitial}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col text-left">
-                          <span className="text-sm font-medium">{user.name}</span>
+                          <span className="text-sm font-medium">
+                            {user?.name}
+                          </span>
                           <span className="line-clamp-1 text-xs text-muted-foreground">
-                            {user.email}
+                            {user?.email}
                           </span>
                           <Badge variant="outline" className="text-xs mt-1 w-fit">
                             {getRoleDisplayName(user.role)}

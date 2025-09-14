@@ -3,21 +3,21 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AnimatedKpiCard } from '@/components/ui/animated-kpi-card';
+import { Progress } from '@/components/ui/progress';
 import { 
   BookOpen, 
   Users, 
   Trophy, 
   TrendingUp,
-  Plus,
-  Play,
   Clock,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
 import { useProfilePanel } from '@/contexts/ProfilePanelContext';
+import { useNavigate } from 'react-router-dom';
 
 export function TenantAdminDashboard() {
   const { openPanel } = useProfilePanel();
+  const navigate = useNavigate();
   const stats = [
     { 
       label: 'Active Courses', 
@@ -49,35 +49,12 @@ export function TenantAdminDashboard() {
     }
   ];
 
-  const courses = [
-    { 
-      title: 'Advanced React Development', 
-      students: 45, 
-      completion: 82, 
-      status: 'active',
-      instructor: 'Sarah Chen'
-    },
-    { 
-      title: 'UI/UX Design Fundamentals', 
-      students: 67, 
-      completion: 74, 
-      status: 'active',
-      instructor: 'Mike Johnson'
-    },
-    { 
-      title: 'Python for Data Science', 
-      students: 34, 
-      completion: 91, 
-      status: 'draft',
-      instructor: 'Dr. Lisa Park'
-    },
-    { 
-      title: 'Digital Marketing Strategy', 
-      students: 52, 
-      completion: 68, 
-      status: 'active',
-      instructor: 'Alex Rivera'
-    }
+  // Mock distribution of active skills students are pursuing
+  const activeSkills = [
+    { name: 'Data Analysis', percentage: 42, students: 204 },
+    { name: 'Machine Learning', percentage: 26, students: 126 },
+    { name: 'UI/UX Design', percentage: 18, students: 88 },
+    { name: 'Web Development', percentage: 14, students: 68 },
   ];
 
   const recentActivity = [
@@ -96,13 +73,9 @@ export function TenantAdminDashboard() {
           <p className="text-muted-foreground mt-2">Manage your courses and student progress</p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => navigate('/students')}>
             <Users className="w-4 h-4 mr-2" />
             Manage Students
-          </Button>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-medium">
-            <Plus className="w-4 h-4 mr-2" />
-            New Course
           </Button>
         </div>
       </div>
@@ -123,47 +96,27 @@ export function TenantAdminDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Course Management */}
+        {/* Active Skills */}
         <Card className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold">Course Management</h3>
-            <Button variant="outline" size="sm">View All</Button>
+            <h3 className="text-xl font-semibold">Active Skills</h3>
+            <Button variant="outline" size="sm" onClick={() => navigate('/students')}>View Students</Button>
           </div>
           <div className="space-y-4">
-            {courses.map((course) => (
-              <div key={course.title} className="p-4 rounded-lg bg-white/40 backdrop-blur-sm hover:bg-white/50 transition-all">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h4 className="font-medium">{course.title}</h4>
-                    <p className="text-sm text-muted-foreground">by {course.instructor}</p>
+            {activeSkills.map((skill) => (
+              <div key={skill.name} className="p-4 rounded-lg bg-white/40 backdrop-blur-sm hover:bg-white/50 transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-primary" />
+                    <h4 className="font-medium">{skill.name}</h4>
                   </div>
-                  <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>
-                    {course.status}
-                  </Badge>
+                  <Badge variant="secondary">{skill.students} students</Badge>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-4">
-                    <span className="flex items-center">
-                      <Users className="w-4 h-4 mr-1" />
-                      {course.students}
-                    </span>
-                    <span className="flex items-center">
-                      <Trophy className="w-4 h-4 mr-1" />
-                      {course.completion}%
-                    </span>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    <Play className="w-4 h-4" />
-                  </Button>
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">{skill.percentage}% pursuing</span>
+                  <span className="font-medium">{skill.percentage}%</span>
                 </div>
-                <div className="mt-3">
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full" 
-                      style={{width: `${course.completion}%`}}
-                    ></div>
-                  </div>
-                </div>
+                <Progress value={skill.percentage} className="h-2" />
               </div>
             ))}
           </div>

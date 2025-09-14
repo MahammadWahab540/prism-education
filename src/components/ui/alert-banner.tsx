@@ -1,67 +1,115 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
-import { AlertTriangle, CheckCircle, Info, X } from "lucide-react"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle, AlertTriangle, Info, XCircle, X } from 'lucide-react';
 
-const alertBannerVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
-  {
-    variants: {
-      variant: {
-        default: "bg-card text-card-foreground",
-        destructive: "border-accent-error/50 text-accent-error-foreground [&>svg]:text-accent-error",
-        success: "border-accent-success/50 text-accent-success-foreground [&>svg]:text-accent-success",
-        warning: "border-accent-warning/50 text-accent-warning-foreground [&>svg]:text-accent-warning",
-      },
+export type AlertVariant =
+  | 'default'
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'destructive';
+
+interface AlertBannerProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: AlertVariant;
+  title?: string;
+  /** Override the default icon for the chosen variant */
+  icon?: React.ReactNode;
+  /** Show a close button on the right */
+  dismissible?: boolean;
+  /** Called when the close button is pressed */
+  onDismiss?: () => void;
+  className?: string;
+  children: React.ReactNode;
+}
+
+const variantConfig: Record<
+  AlertVariant,
+  { className: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }
+> = {
+  default: {
+    className:
+      'border-border/80 bg-card text-card-foreground [&>svg]:text-foreground',
+    icon: Info,
+  },
+  info: {
+    className:
+      'border-primary/20 bg-primary/5 text-primary [&>svg]:text-primary',
+    icon: Info,
+  },
+  success: {
+    className:
+      'border-accent-success/20 bg-accent-success/5 text-accent-success [&>svg]:text-accent-success',
+    icon: CheckCircle,
+  },
+  warning: {
+    className:
+      'border-accent-warning/20 bg-accent-warning/5 text-accent-warning [&>svg]:text-accent-warning',
+    icon: AlertTriangle,
+  },
+  error: {
+    className:
+      'border-accent-error/20 bg-accent-error/5 text-accent-error [&>svg]:text-accent-error',
+    icon: XCircle,
+  },
+  destructive: {
+    className:
+      'border-accent-error/50 bg-accent-error/5 text-accent-error [&>svg]:text-accent-error',
+    icon: AlertTriangle,
+  },
+};
+
+export const AlertBanner = React.forwardRef<HTMLDivElement, AlertBannerProps>(
+  (
+    {
+      variant = 'default',
+      title,
+      icon,
+      dismissible,
+      onDismiss,
+      className,
+      children,
+      ...props
     },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
+    ref
+  ) => {
+    const cfg = variantConfig[variant];
+    const Icon = cfg.icon;
 
-const AlertBanner = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertBannerVariants> & {
-    icon?: React.ReactNode
-    dismissible?: boolean
-    onDismiss?: () => void
-  }
->(({ className, variant, icon, dismissible, onDismiss, children, ...props }, ref) => {
-  const getDefaultIcon = () => {
-    switch (variant) {
-      case "destructive":
-        return <AlertTriangle className="h-4 w-4" />
-      case "success":
-        return <CheckCircle className="h-4 w-4" />
-      case "warning":
-        return <AlertTriangle className="h-4 w-4" />
-      default:
-        return <Info className="h-4 w-4" />
-    }
-  }
+    return (
+      <Alert
+        ref={ref}
+        role="alert"
+        className={cn(
+          'relative w-full rounded-lg p-4',
+          // Keep shadcn alert flow with leading icon
+          // and ensure spacing/positioning feels right.
+          '[&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4',
+          cfg.className,
+          className
+        )}
+        {...props}
+      >
+        {icon ?? <Icon className="h-4 w-4" aria-hidden="true" />}
+        <div className="flex-1">
+          {title && <AlertTitle>{title}</AlertTitle>}
+          <AlertDescription>{children}</AlertDescription>
+        </div>
 
-  return (
-    <div
-      ref={ref}
-      role="alert"
-      className={cn(alertBannerVariants({ variant }), className)}
-      {...props}
-    >
-      {icon || getDefaultIcon()}
-      <div className="flex-1">{children}</div>
-      {dismissible && (
-        <button
-          onClick={onDismiss}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
-      )}
-    </div>
-  )
-})
-AlertBanner.displayName = "AlertBanner"
+        {dismissible && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </Alert>
+    );
+  }
+);
 
-export { AlertBanner, alertBannerVariants }
+AlertBanner.displayName = 'AlertBanner';
