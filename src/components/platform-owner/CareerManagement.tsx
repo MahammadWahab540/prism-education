@@ -105,6 +105,10 @@ export function CareerManagement() {
   const [careerGoals, setCareerGoals] = useState<CareerGoal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    loadCareerGoals();
+  }, []);
+
   if (!user || user.role !== 'platform_owner') {
     return (
       <DashboardLayout>
@@ -112,10 +116,6 @@ export function CareerManagement() {
       </DashboardLayout>
     );
   }
-
-  useEffect(() => {
-    loadCareerGoals();
-  }, []);
 
   const loadCareerGoals = async () => {
     try {
