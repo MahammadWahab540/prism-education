@@ -1,55 +1,110 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { useCareers } from '@/hooks/useCareers';
-import type { CareerCategory, CareerGoal, DifficultyLevel } from '@/types/careers';
-import { getAllSkills } from '@/lib/skillsStore';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { getCareerGoals, updateCareerGoal, type CareerGoal } from '@/lib/api/careerGoals';
+import { Loader2, Edit } from 'lucide-react';
 
-function MultiSelectChips({ options, value, onChange, placeholder = 'Select…' }: { options: { id: string; name: string }[]; value: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
+function EditCareerGoalDialog({ goal, onSave }: { goal: CareerGoal; onSave: (id: string, updates: Partial<Omit<CareerGoal, 'id'>>) => Promise<void> }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const filtered = options.filter(o => o.name.toLowerCase().includes(query.toLowerCase()));
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: goal.title,
+    description: goal.description,
+    status: goal.status as "Active" | "Inactive"
+  });
+  const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    const changed = formData.title !== goal.title || 
+                   formData.description !== goal.description || 
+                   formData.status !== goal.status;
+    setHasChanges(changed);
+  }, [formData, goal]);
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await onSave(goal.id, formData);
+      setOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="border rounded-md p-2">
-      <div className="flex flex-wrap gap-2 mb-2">
-        {value.map(v => {
-          const opt = options.find(o => o.id === v);
-          return (
-            <span key={v} className="inline-flex items-center gap-1 text-xs border rounded px-2 py-0.5">
-              {opt?.name || v}
-              <button className="text-muted-foreground hover:text-foreground" onClick={() => onChange(value.filter(x => x !== v))}>×</button>
-            </span>
-          );
-        })}
-      </div>
-      <div className="flex items-center gap-2">
-        <Input placeholder={placeholder} value={query} onChange={(e) => setQuery(e.target.value)} onFocus={() => setOpen(true)} />
-        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(o => !o)}>{open ? 'Hide' : 'Browse'}</Button>
-      </div>
-      {open && (
-        <div className="mt-2 max-h-40 overflow-auto border rounded p-2 bg-background">
-          {filtered.map(o => (
-            <button key={o.id} type="button" className="block w-full text-left text-sm px-2 py-1 hover:bg-muted rounded" onClick={() => onChange(Array.from(new Set([...value, o.id])))}>
-              {o.name}
-            </button>
-          ))}
-          {filtered.length === 0 && <div className="text-xs text-muted-foreground px-2">No options</div>}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Edit className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Career Goal</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Title</label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Career goal title"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Description</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Career goal description"
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Status</label>
+            <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => setFormData(prev => ({ ...prev, status: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={!hasChanges || isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </div>
         </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function CareerManagement() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [careerGoals, setCareerGoals] = useState<CareerGoal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   if (!user || user.role !== 'platform_owner') {
     return (
       <DashboardLayout>
@@ -57,206 +112,110 @@ export function CareerManagement() {
       </DashboardLayout>
     );
   }
-  const careers = useCareers();
-  const skills = getAllSkills();
 
-  // Category form state
-  const [cat, setCat] = useState<{ name: string; description: string; icon: string; isGlobal: boolean; tenantId?: string }>({ name: '', description: '', icon: '🎯', isGlobal: true });
-  const [catError, setCatError] = useState<string | null>(null);
+  useEffect(() => {
+    loadCareerGoals();
+  }, []);
 
-  // Goal form state
-  const [goal, setGoal] = useState<{ categoryId: string; name: string; icon: string; shortDescription: string; longDescription: string; durationMinMonths: number; durationMaxMonths: number; difficulty: DifficultyLevel; isGlobal: boolean; tenantId?: string; linkedSkillIds: string[] }>({ categoryId: '', name: '', icon: '🎓', shortDescription: '', longDescription: '', durationMinMonths: 3, durationMaxMonths: 6, difficulty: 'Beginner', isGlobal: true, linkedSkillIds: [] });
-  const [goalError, setGoalError] = useState<string | null>(null);
-
-  const onCreateCategory = () => {
+  const loadCareerGoals = async () => {
     try {
-      setCatError(null);
-      careers.createCategory({ name: cat.name, description: cat.description, icon: cat.icon, isGlobal: cat.isGlobal, tenantId: cat.isGlobal ? undefined : cat.tenantId });
-      setCat({ name: '', description: '', icon: '🎯', isGlobal: true });
-    } catch (e: any) {
-      setCatError(e?.message || 'Failed to create category');
-    }
-  };
-
-  const onCreateGoal = () => {
-    try {
-      setGoalError(null);
-      careers.createGoal({
-        categoryId: goal.categoryId,
-        name: goal.name,
-        icon: goal.icon,
-        shortDescription: goal.shortDescription,
-        longDescription: goal.longDescription,
-        durationMinMonths: Number(goal.durationMinMonths),
-        durationMaxMonths: Number(goal.durationMaxMonths),
-        difficulty: goal.difficulty,
-        isGlobal: goal.isGlobal,
-        tenantId: goal.isGlobal ? undefined : goal.tenantId,
-        linkedSkillIds: goal.linkedSkillIds,
-        isActive: true,
+      setIsLoading(true);
+      const goals = await getCareerGoals();
+      setCareerGoals(goals);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load career goals",
+        variant: "destructive"
       });
-      setGoal({ categoryId: '', name: '', icon: '🎓', shortDescription: '', longDescription: '', durationMinMonths: 3, durationMaxMonths: 6, difficulty: 'Beginner', isGlobal: true, linkedSkillIds: [] });
-    } catch (e: any) {
-      setGoalError(e?.message || 'Failed to create goal');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const categories = careers.state.categories;
-  const goals = careers.state.goals;
+  const handleUpdateGoal = async (id: string, updates: Partial<Omit<CareerGoal, 'id'>>) => {
+    try {
+      const updatedGoal = await updateCareerGoal(id, updates);
+      
+      // Optimistically update UI
+      setCareerGoals(prev => prev.map(goal => 
+        goal.id === id ? updatedGoal : goal
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Career goal updated successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to update career goal",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-gradient-luxury">Career Management</h1>
-          <p className="text-muted-foreground mt-2">Create categories and career goals; link to skills; scope by tenant</p>
+          <p className="text-muted-foreground mt-2">Manage and edit career goals available to students</p>
         </div>
 
-        <Tabs defaultValue="categories" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="goals">Goals</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="categories" className="space-y-6">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Add Category</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {catError && <div className="text-sm text-red-600">{catError}</div>}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Input placeholder="Name" value={cat.name} onChange={e => setCat(prev => ({ ...prev, name: e.target.value }))} />
-                  <Input placeholder="Icon (emoji)" value={cat.icon} onChange={e => setCat(prev => ({ ...prev, icon: e.target.value }))} />
-                  <Textarea placeholder="Description" className="md:col-span-1" value={cat.description} onChange={e => setCat(prev => ({ ...prev, description: e.target.value }))} />
-                  <div className="flex items-center gap-2">
-                    <Switch checked={cat.isGlobal} onCheckedChange={(v) => setCat(prev => ({ ...prev, isGlobal: v }))} />
-                    <span className="text-sm">Global</span>
-                  </div>
-                  {!cat.isGlobal && (
-                    <Input placeholder="Tenant ID" value={cat.tenantId || ''} onChange={e => setCat(prev => ({ ...prev, tenantId: e.target.value }))} />
-                  )}
-                </div>
-                <Button onClick={onCreateCategory}>Create Category</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Categories</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {categories.map((c) => (
-                    <div key={c.id} className="border rounded p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg" aria-hidden>{c.icon || '📁'}</span>
-                          <div className="font-medium">{c.name}</div>
-                        </div>
-                        <Badge variant="outline">{c.isGlobal ? 'Global' : `Tenant: ${c.tenantId}`}</Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">{c.description || '—'}</div>
-                      <div className="mt-2 flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => careers.deleteCategory(c.id)}>Delete</Button>
-                      </div>
-                    </div>
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Current Career Goals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Loading career goals...</span>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {careerGoals.map((goal) => (
+                    <TableRow key={goal.id}>
+                      <TableCell className="font-mono text-sm">{goal.id}</TableCell>
+                      <TableCell className="font-medium">{goal.title}</TableCell>
+                      <TableCell className="max-w-md">
+                        <div className="line-clamp-2">{goal.description}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={goal.status === "Active" ? "default" : "secondary"}
+                        >
+                          {goal.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <EditCareerGoalDialog goal={goal} onSave={handleUpdateGoal} />
+                      </TableCell>
+                    </TableRow>
                   ))}
-                  {categories.length === 0 && <div className="text-sm text-muted-foreground">No categories yet.</div>}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="goals" className="space-y-6">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Add Career Goal</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {goalError && <div className="text-sm text-red-600">{goalError}</div>}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Select value={goal.categoryId} onValueChange={(v) => setGoal(prev => ({ ...prev, categoryId: v }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Input placeholder="Name" value={goal.name} onChange={e => setGoal(prev => ({ ...prev, name: e.target.value }))} />
-                  <Input placeholder="Icon (emoji)" value={goal.icon} onChange={e => setGoal(prev => ({ ...prev, icon: e.target.value }))} />
-                  <Select value={goal.difficulty} onValueChange={(v) => setGoal(prev => ({ ...prev, difficulty: v as DifficultyLevel }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Difficulty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Beginner">Beginner</SelectItem>
-                      <SelectItem value="Intermediate">Intermediate</SelectItem>
-                      <SelectItem value="Advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input type="number" placeholder="Min Duration (months)" value={goal.durationMinMonths} onChange={e => setGoal(prev => ({ ...prev, durationMinMonths: Number(e.target.value) }))} />
-                  <Input type="number" placeholder="Max Duration (months)" value={goal.durationMaxMonths} onChange={e => setGoal(prev => ({ ...prev, durationMaxMonths: Number(e.target.value) }))} />
-                  <Textarea placeholder="Short Description" value={goal.shortDescription} onChange={e => setGoal(prev => ({ ...prev, shortDescription: e.target.value }))} />
-                  <Textarea placeholder="Long Description" value={goal.longDescription} onChange={e => setGoal(prev => ({ ...prev, longDescription: e.target.value }))} />
-                  <div className="flex items-center gap-2">
-                    <Switch checked={goal.isGlobal} onCheckedChange={(v) => setGoal(prev => ({ ...prev, isGlobal: v }))} />
-                    <span className="text-sm">Global</span>
-                  </div>
-                  {!goal.isGlobal && (
-                    <Input placeholder="Tenant ID" value={goal.tenantId || ''} onChange={e => setGoal(prev => ({ ...prev, tenantId: e.target.value }))} />
+                  {careerGoals.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No career goals found
+                      </TableCell>
+                    </TableRow>
                   )}
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-1">Linked Skills</div>
-                  <MultiSelectChips
-                    options={skills.map(s => ({ id: s.id, name: s.name }))}
-                    value={goal.linkedSkillIds}
-                    onChange={(v) => setGoal(prev => ({ ...prev, linkedSkillIds: v }))}
-                    placeholder="Search skills…"
-                  />
-                </div>
-                <Button onClick={onCreateGoal}>Create Goal</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Goals</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {goals.map((g) => (
-                    <div key={g.id} className="border rounded p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg" aria-hidden>{g.icon || '🎓'}</span>
-                          <div>
-                            <div className="font-medium">{g.name}</div>
-                            <div className="text-xs text-muted-foreground">{categories.find(c => c.id === g.categoryId)?.name || '—'}</div>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{g.isGlobal ? 'Global' : `Tenant: ${g.tenantId}`}</Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1 line-clamp-3">{g.shortDescription || '—'}</div>
-                      <div className="text-xs mt-2 flex items-center gap-3">
-                        <Badge variant="secondary">{g.difficulty}</Badge>
-                        <span>{g.durationMinMonths}-{g.durationMaxMonths} mo</span>
-                      </div>
-                      <div className="mt-2 text-xs">Skills: {g.linkedSkillIds.length}</div>
-                      <div className="mt-2 flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => careers.updateGoal(g.id, { isActive: !g.isActive })}>{g.isActive ? 'Disable' : 'Enable'}</Button>
-                        <Button size="sm" variant="outline" onClick={() => careers.deleteGoal(g.id)}>Delete</Button>
-                      </div>
-                    </div>
-                  ))}
-                  {goals.length === 0 && <div className="text-sm text-muted-foreground">No goals yet.</div>}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

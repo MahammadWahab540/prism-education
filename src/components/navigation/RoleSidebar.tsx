@@ -191,10 +191,10 @@ export function RoleSidebar() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Avatar className="size-4">
-                              <AvatarImage
-                                src={user?.orgAvatar}
-                                alt={organizationName}
-                              />
+                               <AvatarImage
+                                 src={user?.avatar}
+                                 alt={organizationName}
+                               />
                               <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                                 {organizationName.charAt(0)}
                               </AvatarFallback>

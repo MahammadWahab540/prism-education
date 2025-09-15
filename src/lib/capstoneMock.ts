@@ -1,4 +1,4 @@
-import { CapstoneResponse, CapstoneResponseSchema, Instance, Stage, Suggestion } from "../types/capstone";
+import { CapstoneResponse, CapstoneResponseSchema, CapstoneInstance, CapstoneStageSpec, Suggestion } from "../types/capstone";
 
 type BuildParams = {
   skill: string;
@@ -56,7 +56,7 @@ function buildSuggestions(skill: string): Suggestion[] {
   ];
 }
 
-function buildStages(): Stage[] {
+function buildStages(): CapstoneStageSpec[] {
   return [
     {
       id: "stage-1",
@@ -101,7 +101,7 @@ function buildStages(): Stage[] {
   ];
 }
 
-function buildInstanceFromSuggestion(skill: string, s: Suggestion): Instance {
+function buildInstanceFromSuggestion(skill: string, s: Suggestion, params: BuildParams): CapstoneInstance {
   const stages = buildStages();
   const projectTitle = s.title;
   const projectSummary = s.overview.objective;
@@ -222,22 +222,23 @@ function buildInstanceFromSuggestion(skill: string, s: Suggestion): Instance {
 
   const submissionLink = `https://example.com/demo/${slugify(projectTitle)}`;
 
-  const instance: Instance = {
-    status: "Active",
+  const instance: CapstoneInstance = {
+    id: randId("inst"),
+    userId: "user-123", // should come from params
+    tenantId: params.tenantId,
     templateId: s.id,
-    instanceId: randId("inst"),
-    project: {
-      title: projectTitle,
-      summary: projectSummary,
+    skillId: skill,
+    status: "Active",
+    roadmap: {
+      project: {
+        title: projectTitle,
+        summary: projectSummary,
+      },
+      stages,
+      subProjects: [sp1, sp2],
     },
-    stages,
-    subProjects: [sp1, sp2],
-    submission: {
-      type: "URL",
-      link: submissionLink,
-      notes: "Replace with Drive/GitHub/URL in production.",
-      visibleTo: { platformOwner: true, tenantAdmin: true },
-    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 
   return instance;
@@ -249,7 +250,7 @@ export function buildMockCapstoneResponse(params: BuildParams): CapstoneResponse
   const suggestions = buildSuggestions(skill);
   const selected = suggestions.find((s) => s.id === selectedTemplateId) ?? suggestions[0];
 
-  const instance = buildInstanceFromSuggestion(skill, selected);
+  const instance = buildInstanceFromSuggestion(skill, selected, params);
 
   const response: CapstoneResponse = {
     mode: "mock",
