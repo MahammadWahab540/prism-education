@@ -10,8 +10,92 @@ import { Badge } from '@/components/ui/badge';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { getCareerGoals, updateCareerGoal, type CareerGoal } from '@/lib/api/careerGoals';
-import { Loader2, Edit } from 'lucide-react';
+import { getCareerGoals, updateCareerGoal, createCareerGoal, type CareerGoal } from '@/lib/api/careerGoals';
+import { Loader2, Edit, Plus } from 'lucide-react';
+
+function AddCareerGoalDialog({ onSave }: { onSave: (goalData: Omit<CareerGoal, 'id'>) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    status: 'Active' as "Active" | "Inactive"
+  });
+
+  const handleSave = async () => {
+    if (!formData.title.trim() || !formData.description.trim()) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onSave(formData);
+      setFormData({ title: '', description: '', status: 'Active' });
+      setOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Add New Career Goal
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add New Career Goal</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Title</label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Career goal title"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Description</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Career goal description"
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Status</label>
+            <Select value={formData.status} onValueChange={(value: "Active" | "Inactive") => setFormData(prev => ({ ...prev, status: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={!formData.title.trim() || !formData.description.trim() || isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Career Goal
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function EditCareerGoalDialog({ goal, onSave }: { goal: CareerGoal; onSave: (id: string, updates: Partial<Omit<CareerGoal, 'id'>>) => Promise<void> }) {
   const [open, setOpen] = useState(false);
@@ -155,6 +239,26 @@ export function CareerManagement() {
     }
   };
 
+  const handleCreateGoal = async (goalData: Omit<CareerGoal, 'id'>) => {
+    try {
+      const newGoal = await createCareerGoal(goalData);
+      
+      // Add to UI
+      setCareerGoals(prev => [...prev, newGoal]);
+      
+      toast({
+        title: "Success",
+        description: "Career goal created successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create career goal",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -164,8 +268,9 @@ export function CareerManagement() {
         </div>
 
         <Card className="glass-card">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Current Career Goals</CardTitle>
+            <AddCareerGoalDialog onSave={handleCreateGoal} />
           </CardHeader>
           <CardContent>
             {isLoading ? (

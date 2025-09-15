@@ -6,45 +6,60 @@ export interface CareerGoal {
   status: "Active" | "Inactive";
 }
 
+// Mock data store - in real implementation, this would be handled by the backend
+let mockCareerGoals: CareerGoal[] = [
+  {
+    id: "1",
+    title: "Full Stack Developer",
+    description: "Master both frontend and backend development skills",
+    status: "Active"
+  },
+  {
+    id: "2", 
+    title: "Data Scientist",
+    description: "Develop expertise in data analysis and machine learning",
+    status: "Active"
+  },
+  {
+    id: "3",
+    title: "DevOps Engineer", 
+    description: "Learn infrastructure management and CI/CD practices",
+    status: "Inactive"
+  }
+];
+
 // Mock API implementation - replace with actual API calls
 export async function getCareerGoals(): Promise<CareerGoal[]> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  // Mock data - in real implementation, this would be an API call
-  return [
-    {
-      id: "1",
-      title: "Full Stack Developer",
-      description: "Master both frontend and backend development skills",
-      status: "Active"
-    },
-    {
-      id: "2", 
-      title: "Data Scientist",
-      description: "Develop expertise in data analysis and machine learning",
-      status: "Active"
-    },
-    {
-      id: "3",
-      title: "DevOps Engineer", 
-      description: "Learn infrastructure management and CI/CD practices",
-      status: "Inactive"
-    }
-  ];
+  return [...mockCareerGoals];
 }
 
 export async function updateCareerGoal(id: string, updates: Partial<Omit<CareerGoal, 'id'>>): Promise<CareerGoal> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
-  // Mock implementation - in real app, this would call PUT /api/career-goals/:id
-  const goals = await getCareerGoals();
-  const goal = goals.find(g => g.id === id);
-  
-  if (!goal) {
+  const index = mockCareerGoals.findIndex(goal => goal.id === id);
+  if (index === -1) {
     throw new Error('Career goal not found');
   }
   
-  return { ...goal, ...updates };
+  const updatedGoal = { ...mockCareerGoals[index], ...updates };
+  mockCareerGoals[index] = updatedGoal;
+  
+  return updatedGoal;
+}
+
+export async function createCareerGoal(goalData: Omit<CareerGoal, 'id'>): Promise<CareerGoal> {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  const newGoal: CareerGoal = {
+    id: `goal-${Date.now()}`,
+    ...goalData
+  };
+  
+  mockCareerGoals.push(newGoal);
+  return newGoal;
 }
