@@ -39,11 +39,13 @@
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@supabase/supabase-js": "^2.58.0",
     "@tanstack/react-query": "^5.83.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.2",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
     "input-otp": "^1.4.2",
@@ -80,5 +82,18 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19"
-  }
+  },
+  "description": "**URL**: https://lovable.dev/projects/d687e0be-8b39-4938-823e-ef94852553d6",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MahammadWahab540/prism-education.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MahammadWahab540/prism-education/issues"
+  },
+  "homepage": "https://github.com/MahammadWahab540/prism-education#readme"
 }
