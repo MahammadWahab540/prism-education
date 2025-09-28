@@ -32,7 +32,6 @@ import { Profile } from '@/pages/Profile';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
-import NotFound from '@/pages/NotFound';
 
 const AccountSettingsRoute = React.lazy(() => import('@/pages/AccountSettingsRoute'));
 const LearningHistory = React.lazy(() => import('@/pages/LearningHistory'));
