@@ -1,8 +1,8 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { NotificationProvider } from '@/contexts/NotificationContext';
-import { LearningPathProvider } from '@/contexts/LearningPathContext';
+import { NotificationProvider } from '@/contexts/NotificationSupabase';
+import { LearningPathProvider } from '@/contexts/LearningPathSupabase';
 import { StudentRouteGuard } from '@/components/guards/StudentRouteGuard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
@@ -40,7 +40,7 @@ function AppContent() {
   const { user } = useAuth();
 
   return (
-    <NotificationProvider userId={user?.id || 'guest'}>
+    <NotificationProvider>
       <LearningPathProvider>
         <TooltipProvider>
           <Router>
