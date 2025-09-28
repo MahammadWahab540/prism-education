@@ -29,7 +29,8 @@ import TenantReports from '@/pages/TenantReports';
 import HelpSupport from '@/pages/HelpSupport';
 import LearningPath from '@/pages/LearningPath';
 import { Profile } from '@/pages/Profile';
-import NotFound from '@/pages/NotFound';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import Auth from '@/pages/Auth';
 
 const AccountSettingsRoute = React.lazy(() => import('@/pages/AccountSettingsRoute'));
 const LearningHistory = React.lazy(() => import('@/pages/LearningHistory'));
@@ -46,28 +47,29 @@ function AppContent() {
               <StudentRouteGuard>
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/my-skills" element={<MySkills />} />
-                  <Route path="/roadmap/:skillId" element={<Roadmap />} />
-                  <Route path="/learn/:skillId/:stageId" element={<LearningPage />} />
-                  <Route path="/course-management" element={<CourseManagement />} />
-                  <Route path="/capstone/:capstoneId" element={<Capstone />} />
-                  <Route path="/capstone-instance/:instanceId" element={<CapstoneInstance />} />
-                  <Route path="/tenants" element={<Tenants />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/career-management" element={<CareerManagement />} />
-                  <Route path="/tenant-analytics" element={<TenantAnalytics />} />
-                  <Route path="/tenant-reports" element={<TenantReports />} />
-                  <Route path="/admin/capstones/submissions" element={<AdminCapstoneSubmissions />} />
-                  <Route path="/system-users" element={<SystemUsers />} />
-                  <Route path="/admin/capstones/:instanceId" element={<AdminCapstoneDetail />} />
-                  <Route path="/students" element={<Students />} />
-                  <Route path="/help-support" element={<HelpSupport />} />
-                  <Route path="/settings" element={<React.Suspense fallback={<div className="p-6">Loading...</div>}><AccountSettingsRoute /></React.Suspense>} />
-                  <Route path="/account/settings" element={<React.Suspense fallback={<div className="p-6">Loading...</div>}><AccountSettingsRoute /></React.Suspense>} />
-                  <Route path="/learning-path" element={<LearningPath />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/learning-history" element={<React.Suspense fallback={<div className="p-6">Loading...</div>}><LearningHistory /></React.Suspense>} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/my-skills" element={<ProtectedRoute><MySkills /></ProtectedRoute>} />
+                  <Route path="/roadmap/:skillId" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+                  <Route path="/learn/:skillId/:stageId" element={<ProtectedRoute><LearningPage /></ProtectedRoute>} />
+                  <Route path="/course-management" element={<ProtectedRoute allowedRoles={['platform_owner', 'tenant_admin']}><CourseManagement /></ProtectedRoute>} />
+                  <Route path="/capstone/:capstoneId" element={<ProtectedRoute><Capstone /></ProtectedRoute>} />
+                  <Route path="/capstone-instance/:instanceId" element={<ProtectedRoute><CapstoneInstance /></ProtectedRoute>} />
+                  <Route path="/tenants" element={<ProtectedRoute requiredRole="platform_owner"><Tenants /></ProtectedRoute>} />
+                  <Route path="/analytics" element={<ProtectedRoute requiredRole="platform_owner"><Analytics /></ProtectedRoute>} />
+                  <Route path="/career-management" element={<ProtectedRoute allowedRoles={['platform_owner', 'tenant_admin']}><CareerManagement /></ProtectedRoute>} />
+                  <Route path="/tenant-analytics" element={<ProtectedRoute requiredRole="tenant_admin"><TenantAnalytics /></ProtectedRoute>} />
+                  <Route path="/tenant-reports" element={<ProtectedRoute requiredRole="tenant_admin"><TenantReports /></ProtectedRoute>} />
+                  <Route path="/admin/capstones/submissions" element={<ProtectedRoute allowedRoles={['platform_owner', 'tenant_admin']}><AdminCapstoneSubmissions /></ProtectedRoute>} />
+                  <Route path="/system-users" element={<ProtectedRoute requiredRole="platform_owner"><SystemUsers /></ProtectedRoute>} />
+                  <Route path="/admin/capstones/:instanceId" element={<ProtectedRoute allowedRoles={['platform_owner', 'tenant_admin']}><AdminCapstoneDetail /></ProtectedRoute>} />
+                  <Route path="/students" element={<ProtectedRoute requiredRole="tenant_admin"><Students /></ProtectedRoute>} />
+                  <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute><React.Suspense fallback={<div className="p-6">Loading...</div>}><AccountSettingsRoute /></React.Suspense></ProtectedRoute>} />
+                  <Route path="/account/settings" element={<ProtectedRoute><React.Suspense fallback={<div className="p-6">Loading...</div>}><AccountSettingsRoute /></React.Suspense></ProtectedRoute>} />
+                  <Route path="/learning-path" element={<ProtectedRoute><LearningPath /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/profile/learning-history" element={<ProtectedRoute><React.Suspense fallback={<div className="p-6">Loading...</div>}><LearningHistory /></React.Suspense></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </StudentRouteGuard>
