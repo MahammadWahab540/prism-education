@@ -1,1 +1,16 @@
 project_id = "zswzrjsptekiybqnutvx"
+
+[functions.ai-tutor]
+verify_jwt = false
+
+[functions.generate-capstone-roadmap]
+verify_jwt = true
+
+[functions.content-recommendations]
+verify_jwt = true
+
+[functions.analyze-student-progress]
+verify_jwt = true
+
+[functions.notification-manager]
+verify_jwt = true
