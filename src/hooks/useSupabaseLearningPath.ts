@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -20,79 +20,80 @@ interface LearningPath {
   updatedAt: string;
 }
 
+const fetchLearningPaths = async (user: any): Promise<{ paths: LearningPath[], status: LearningPathStatus }> => {
+  if (!user || user.role !== 'student') {
+    return {
+      paths: [],
+      status: {
+        hasActiveSkills: false,
+        hasCareerGoal: false,
+        skillsCount: 0,
+        lastUpdated: null
+      }
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('learning_paths')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('status', 'active');
+
+  if (error) {
+    throw new Error(`Failed to load learning paths: ${error.message}`);
+  }
+
+  const transformedPaths: LearningPath[] = data?.map(path => ({
+    id: path.id,
+    userId: path.user_id,
+    careerGoalId: path.career_goal_id,
+    selectedSkills: path.selected_skills || [],
+    status: path.status,
+    createdAt: path.created_at,
+    updatedAt: path.updated_at,
+  })) || [];
+
+  // Calculate status
+  const totalSkills = transformedPaths.reduce((acc, path) => acc + path.selectedSkills.length, 0);
+  const status: LearningPathStatus = {
+    hasActiveSkills: totalSkills > 0,
+    hasCareerGoal: transformedPaths.length > 0,
+    skillsCount: totalSkills,
+    lastUpdated: transformedPaths.length > 0 ? transformedPaths[0].updatedAt : null
+  };
+
+  return { paths: transformedPaths, status };
+};
+
 export function useSupabaseLearningPath() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [status, setStatus] = useState<LearningPathStatus>({
+  const queryClient = useQueryClient();
+
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ['learning-paths', user?.id],
+    queryFn: () => fetchLearningPaths(user),
+    enabled: !!user && user.role === 'student',
+  });
+
+  const learningPaths = data?.paths || [];
+  const status = data?.status || {
     hasActiveSkills: false,
     hasCareerGoal: false,
     skillsCount: 0,
     lastUpdated: null
-  });
-  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
-  const [loading, setLoading] = useState(true);
+  };
 
   const needsOnboarding = user?.role === 'student' && (!status.hasCareerGoal || !status.hasActiveSkills);
 
-  useEffect(() => {
-    if (user?.role === 'student') {
-      loadLearningPaths();
-    }
-  }, [user]);
+  if (error) {
+    toast({ title: 'Error', description: 'Failed to load learning paths', variant: 'destructive' });
+  }
 
-  const loadLearningPaths = async () => {
-    if (!user) return;
+  const updateLearningPathMutation = useMutation({
+    mutationFn: async ({ goalId, skills }: { goalId: string, skills: string[] }) => {
+      if (!user || user.role !== 'student') throw new Error('User not authorized');
 
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('learning_paths')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-
-      if (error) {
-        console.error('Error loading learning paths:', error);
-        toast({ title: 'Error', description: 'Failed to load learning paths', variant: 'destructive' });
-        return;
-      }
-
-      const transformedPaths: LearningPath[] = data?.map(path => ({
-        id: path.id,
-        userId: path.user_id,
-        careerGoalId: path.career_goal_id,
-        selectedSkills: path.selected_skills || [],
-        status: path.status,
-        createdAt: path.created_at,
-        updatedAt: path.updated_at,
-      })) || [];
-
-      setLearningPaths(transformedPaths);
-
-      // Calculate status
-      const totalSkills = transformedPaths.reduce((acc, path) => acc + path.selectedSkills.length, 0);
-      const newStatus: LearningPathStatus = {
-        hasActiveSkills: totalSkills > 0,
-        hasCareerGoal: transformedPaths.length > 0,
-        skillsCount: totalSkills,
-        lastUpdated: transformedPaths.length > 0 ? transformedPaths[0].updatedAt : null
-      };
-
-      setStatus(newStatus);
-      
-    } catch (error) {
-      console.error('Error in loadLearningPaths:', error);
-      toast({ title: 'Error', description: 'Failed to load learning paths', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateLearningPath = async (goalId: string, skills: string[]) => {
-    if (!user || user.role !== 'student') return;
-
-    try {
       // First, deactivate any existing learning paths
       await supabase
         .from('learning_paths')
@@ -111,26 +112,22 @@ export function useSupabaseLearningPath() {
         .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
-
-      await loadLearningPaths(); // Reload data
-      toast({ title: 'Success', description: 'Learning path updated successfully' });
-      
+      if (error) throw error;
       return data;
-    } catch (error: any) {
-      console.error('Error updating learning path:', error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['learning-paths'] });
+      toast({ title: 'Success', description: 'Learning path updated successfully' });
+    },
+    onError: (error: any) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      throw error;
-    }
-  };
+    },
+  });
 
-  const markOnboardingComplete = async () => {
-    if (!user || user.role !== 'student') return;
+  const markOnboardingCompleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || user.role !== 'student') throw new Error('User not authorized');
 
-    try {
-      // Update user profile to mark onboarding as complete
       const { error } = await supabase
         .from('profiles')
         .update({ 
@@ -138,26 +135,26 @@ export function useSupabaseLearningPath() {
         })
         .eq('id', user.id);
 
-      if (error) {
-        throw error;
-      }
-
-      // Reload learning paths to reflect changes
-      await loadLearningPaths();
-      
-    } catch (error: any) {
-      console.error('Error completing onboarding:', error);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['learning-paths'] });
+    },
+    onError: (error: any) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    }
-  };
+    },
+  });
 
   return {
     status,
     learningPaths,
     loading,
+    error,
     needsOnboarding,
-    updateLearningPath,
-    markOnboardingComplete,
-    refresh: loadLearningPaths,
+    updateLearningPath: (goalId: string, skills: string[]) => updateLearningPathMutation.mutate({ goalId, skills }),
+    isUpdatingLearningPath: updateLearningPathMutation.isPending,
+    markOnboardingComplete: markOnboardingCompleteMutation.mutate,
+    isMarkingOnboardingComplete: markOnboardingCompleteMutation.isPending,
+    refresh: () => queryClient.invalidateQueries({ queryKey: ['learning-paths', user?.id] }),
   };
 }

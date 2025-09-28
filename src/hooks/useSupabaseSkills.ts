@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,67 +17,59 @@ export interface Skill {
   updatedAt: string;
 }
 
+const fetchSkills = async (user: any): Promise<Skill[]> => {
+  if (!user) return [];
+
+  const { data: skillsData, error } = await supabase
+    .from('skills')
+    .select('*')
+    .eq('is_active', true)
+    .or(`is_global.eq.true${user?.tenantId ? `,and(is_global.eq.false,tenant_id.eq.${user.tenantId})` : ''}`);
+
+  if (error) {
+    throw new Error(`Failed to load skills: ${error.message}`);
+  }
+
+  return skillsData?.map(skill => ({
+    id: skill.id,
+    name: skill.name,
+    description: skill.description,
+    category: skill.category,
+    difficulty: skill.difficulty,
+    estimatedHours: skill.estimated_hours,
+    isGlobal: skill.is_global,
+    tenantId: skill.tenant_id,
+    isActive: skill.is_active,
+    createdAt: skill.created_at,
+    updatedAt: skill.updated_at,
+  })) || [];
+};
+
 export function useSupabaseSkills() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadSkills();
-  }, [user]);
+  const { data: skills = [], isLoading: loading, error, refetch } = useQuery({
+    queryKey: ['skills', user?.tenantId],
+    queryFn: () => fetchSkills(user),
+    enabled: !!user,
+  });
 
-  const loadSkills = async () => {
-    try {
-      setLoading(true);
-      
-      // Load skills (global + tenant-specific)
-      const { data: skillsData, error } = await supabase
-        .from('skills')
-        .select('*')
-        .eq('is_active', true)
-        .or(`is_global.eq.true${user?.tenantId ? `,and(is_global.eq.false,tenant_id.eq.${user.tenantId})` : ''}`);
+  if (error) {
+    toast({ title: 'Error', description: 'Failed to load skills', variant: 'destructive' });
+  }
 
-      if (error) {
-        console.error('Error loading skills:', error);
-        toast({ title: 'Error', description: 'Failed to load skills', variant: 'destructive' });
-        return;
-      }
-
-      const transformedSkills: Skill[] = skillsData?.map(skill => ({
-        id: skill.id,
-        name: skill.name,
-        description: skill.description,
-        category: skill.category,
-        difficulty: skill.difficulty,
-        estimatedHours: skill.estimated_hours,
-        isGlobal: skill.is_global,
-        tenantId: skill.tenant_id,
-        isActive: skill.is_active,
-        createdAt: skill.created_at,
-        updatedAt: skill.updated_at,
-      })) || [];
-
-      setSkills(transformedSkills);
-      
-    } catch (error) {
-      console.error('Error in loadSkills:', error);
-      toast({ title: 'Error', description: 'Failed to load skills', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createSkill = async (input: {
-    name: string;
-    description?: string;
-    category?: string;
-    difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
-    estimatedHours?: number;
-    isGlobal: boolean;
-    tenantId?: string;
-  }) => {
-    try {
+  const createSkillMutation = useMutation({
+    mutationFn: async (input: {
+      name: string;
+      description?: string;
+      category?: string;
+      difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+      estimatedHours?: number;
+      isGlobal: boolean;
+      tenantId?: string;
+    }) => {
       const { data, error } = await supabase
         .from('skills')
         .insert({
@@ -100,16 +92,16 @@ export function useSupabaseSkills() {
         throw error;
       }
 
-      await loadSkills(); // Reload skills
-      toast({ title: 'Success', description: 'Skill created successfully' });
-      
       return data;
-    } catch (error: any) {
-      console.error('Error creating skill:', error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      toast({ title: 'Success', description: 'Skill created successfully' });
+    },
+    onError: (error: any) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      throw error;
-    }
-  };
+    },
+  });
 
   const getAllSkills = () => {
     return skills;
@@ -122,9 +114,11 @@ export function useSupabaseSkills() {
   return {
     skills,
     loading,
-    createSkill,
+    error,
+    createSkill: createSkillMutation.mutate,
+    isCreatingSkill: createSkillMutation.isPending,
     getAllSkills,
     getSkillsByCategory,
-    refresh: loadSkills,
+    refresh: refetch,
   };
 }
