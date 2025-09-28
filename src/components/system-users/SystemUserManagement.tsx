@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Plus, 
   UserPlus, 
@@ -30,76 +31,23 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { toast } from '@/components/ui/use-toast';
 import { track } from '@/lib/analytics';
 import { Switch } from '@/components/ui/switch';
-
-interface SystemUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'platform_owner' | 'system_admin' | 'tenant_admin' | 'content_manager';
-  status: 'active' | 'inactive' | 'pending';
-  lastLogin?: Date;
-  createdAt: Date;
-  permissions: string[];
-  tenantId?: string;
-  tenantName?: string;
-}
+import { useSystemUsersSupabase, type SystemUser } from '@/hooks/useSystemUsersSupabase';
 
 export function SystemUserManagement() {
-  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([
-    {
-      id: '1',
-      name: 'John Smith',
-      email: 'john.smith@platform.com',
-      role: 'platform_owner',
-      status: 'active',
-      lastLogin: new Date('2024-08-26'),
-      createdAt: new Date('2024-01-01'),
-      permissions: ['all_access', 'user_management', 'tenant_management', 'analytics', 'system_settings']
-    },
-    {
-      id: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@platform.com',
-      role: 'system_admin',
-      status: 'active',
-      lastLogin: new Date('2024-08-25'),
-      createdAt: new Date('2024-01-15'),
-      permissions: ['user_management', 'tenant_management', 'analytics', 'content_management']
-    },
-    {
-      id: '3',
-      name: 'Mike Wilson',
-      email: 'mike.wilson@techcorp.com',
-      role: 'tenant_admin',
-      status: 'active',
-      lastLogin: new Date('2024-08-24'),
-      createdAt: new Date('2024-02-01'),
-      permissions: ['tenant_users', 'content_access', 'reports'],
-      tenantId: '1',
-      tenantName: 'TechCorp Inc.'
-    },
-    {
-      id: '4',
-      name: 'Emily Davis',
-      email: 'emily.davis@platform.com',
-      role: 'content_manager',
-      status: 'active',
-      lastLogin: new Date('2024-08-23'),
-      createdAt: new Date('2024-03-01'),
-      permissions: ['content_management', 'course_creation', 'skill_management']
-    },
-    {
-      id: '5',
-      name: 'David Brown',
-      email: 'david.brown@edulearn.org',
-      role: 'tenant_admin',
-      status: 'pending',
-      createdAt: new Date('2024-08-20'),
-      permissions: ['tenant_users', 'content_access'],
-      tenantId: '2',
-      tenantName: 'EduLearn Academy'
-    }
-  ]);
+  const { 
+    systemUsers, 
+    activeUsers, 
+    pendingUsers, 
+    tenantAdmins,
+    isLoading,
+    error,
+    createUser,
+    updateUser,
+    deleteUser,
+    isCreatingUser,
+    getDefaultPermissions,
+    getTenantName
+  } = useSystemUsersSupabase();
 
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -134,15 +82,14 @@ export function SystemUserManagement() {
         }
       }
     }
-    const user: SystemUser = {
-      id: Date.now().toString(),
-      ...newUser,
-      status: 'pending',
-      createdAt: new Date(),
-      permissions: getDefaultPermissions(newUser.role),
-      tenantName: newUser.tenantId ? (tenantsData.find((t: any) => t.id === newUser.tenantId)?.name || getTenantName(newUser.tenantId)) : undefined
-    };
-    setSystemUsers([...systemUsers, user]);
+
+    createUser({
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      tenantId: newUser.tenantId || undefined
+    });
+    
     setIsCreateUserOpen(false);
     setNewUser({
       name: '',
@@ -150,30 +97,6 @@ export function SystemUserManagement() {
       role: 'tenant_admin',
       tenantId: ''
     });
-  };
-
-  const getDefaultPermissions = (role: SystemUser['role']): string[] => {
-    switch (role) {
-      case 'platform_owner':
-        return ['all_access', 'user_management', 'tenant_management', 'analytics', 'system_settings'];
-      case 'system_admin':
-        return ['user_management', 'tenant_management', 'analytics', 'content_management'];
-      case 'tenant_admin':
-        return ['tenant_users', 'content_access', 'reports'];
-      case 'content_manager':
-        return ['content_management', 'course_creation', 'skill_management'];
-      default:
-        return [];
-    }
-  };
-
-  const getTenantName = (tenantId: string): string => {
-    const tenantNames: { [key: string]: string } = {
-      '1': 'TechCorp Inc.',
-      '2': 'EduLearn Academy',
-      '3': 'StartupHub'
-    };
-    return tenantNames[tenantId] || 'Unknown Tenant';
   };
 
   const getRoleIcon = (role: string) => {
@@ -232,10 +155,50 @@ export function SystemUserManagement() {
     }
   };
 
-  const activeUsers = systemUsers.filter(u => u.status === 'active').length;
-  const pendingUsers = systemUsers.filter(u => u.status === 'pending').length;
-  const platformOwners = systemUsers.filter(u => u.role === 'platform_owner').length;
-  const tenantAdmins = systemUsers.filter(u => u.role === 'tenant_admin').length;
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+
+        {/* Stats Cards Loading */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+
+        {/* Table Loading */}
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-32" />
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Error loading system users: {error.message}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -313,8 +276,12 @@ export function SystemUserManagement() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="w-full">
-                      <Button onClick={handleCreateUser} className="w-full" disabled={!!(newUser.role === 'tenant_admin' && selectedTenantUsage && selectedTenantUsage.remaining <= 0)}>
-                        Create User
+                      <Button 
+                        onClick={handleCreateUser} 
+                        className="w-full" 
+                        disabled={!!(newUser.role === 'tenant_admin' && selectedTenantUsage && selectedTenantUsage.remaining <= 0) || isCreatingUser}
+                      >
+                        {isCreatingUser ? 'Creating...' : 'Create User'}
                       </Button>
                     </span>
                   </TooltipTrigger>
