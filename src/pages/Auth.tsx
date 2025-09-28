@@ -13,8 +13,7 @@ import { UserRole } from '@/types/auth';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, login, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
@@ -37,42 +36,28 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword,
-      });
-
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials and try again.');
-        } else {
-          setError(error.message);
-        }
-        return;
-      }
-
+      await login(loginEmail, loginPassword);
       // Success! The AuthContext will handle the redirect via useEffect
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
+      if (err.message?.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else {
+        setError(err.message || 'An unexpected error occurred');
+      }
     }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
     setSuccess(null);
 
     // Basic validation
     if (signupPassword.length < 6) {
       setError('Password must be at least 6 characters long');
-      setIsLoading(false);
       return;
     }
 
@@ -104,8 +89,6 @@ export default function Auth() {
       
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
     }
   };
 

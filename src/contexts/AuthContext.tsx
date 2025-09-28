@@ -14,44 +14,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
+        setIsLoading(false);
         
         if (session?.user) {
-          // Fetch user profile from our profiles table
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profile && !error) {
-            const user: User = {
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role as UserRole,
-              tenantId: profile.tenant_id,
-              avatar: profile.avatar_url,
-              createdAt: profile.created_at
-            };
-            setUser(user);
-          } else {
-            console.error('Error fetching profile:', error);
-            setUser(null);
-          }
+          // Defer profile fetching to avoid deadlock
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
         } else {
           setUser(null);
         }
-        
-        setIsLoading(false);
       }
     );
 
     // Check for existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
-      // The onAuthStateChange will handle the session
       if (!session) {
         setIsLoading(false);
       }
@@ -59,6 +39,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profile && !error) {
+        const user: User = {
+          id: profile.id,
+          email: profile.email,
+          name: profile.name,
+          role: profile.role as UserRole,
+          tenantId: profile.tenant_id,
+          avatar: profile.avatar_url,
+          createdAt: profile.created_at
+        };
+        setUser(user);
+      } else {
+        console.error('Error fetching profile:', error);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setUser(null);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -73,10 +82,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      // The onAuthStateChange will handle setting the user
+      // The onAuthStateChange will handle setting the user and clearing loading
     } catch (error) {
       setIsLoading(false);
       throw error;
+    } finally {
+      // Ensure loading is cleared after timeout as fallback
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 5000);
     }
   };
 
