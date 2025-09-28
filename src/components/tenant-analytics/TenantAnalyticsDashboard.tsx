@@ -599,13 +599,11 @@ export function TenantAnalyticsDashboard() {
                 disabled={tempTimeRange === 'custom' && (!!customError || !customStart || !customEnd)}
                 onClick={() => {
                   if (applyTimer.current) clearTimeout(applyTimer.current);
-                  setIsLoading(true);
                   applyTimer.current = setTimeout(() => {
                     setSelectedTenant(tempSelectedTenant);
                     setTimeRange(tempTimeRange);
                     localStorage.setItem('tenant-analytics-time-range', tempTimeRange);
                     localStorage.setItem('tenant-analytics-student', tempSelectedTenant);
-                    setIsLoading(false);
                   }, 300);
                 }}
               >
