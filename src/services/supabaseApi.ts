@@ -80,10 +80,25 @@ export class SupabaseAPI {
 
     // Update user's total watch time
     if (params.watchTimeSeconds) {
-      await supabase.rpc('increment_watch_time', {
-        user_id: user.id,
-        additional_seconds: params.watchTimeSeconds
-      });
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('total_watch_time_hours')
+        .eq('id', user.id)
+        .single();
+        
+      const currentHours = currentProfile?.total_watch_time_hours || 0;
+      const additionalHours = params.watchTimeSeconds / 3600;
+      
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          total_watch_time_hours: currentHours + additionalHours
+        })
+        .eq('id', user.id);
+        
+      if (updateError) {
+        console.error('Error updating watch time:', updateError);
+      }
     }
 
     return data;

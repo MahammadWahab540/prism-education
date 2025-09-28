@@ -966,6 +966,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_engagement_score: {
+        Args: { user_id: string }
+        Returns: number
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -981,6 +985,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_watch_time: {
+        Args: { additional_seconds: number; user_id: string }
+        Returns: undefined
+      }
       is_platform_owner: {
         Args: { _user_id: string }
         Returns: boolean
@@ -988,6 +996,10 @@ export type Database = {
       is_tenant_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      update_user_streak: {
+        Args: { user_id: string }
+        Returns: number
       }
     }
     Enums: {
