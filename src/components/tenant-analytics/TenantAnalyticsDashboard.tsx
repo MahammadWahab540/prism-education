@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +16,7 @@ import type { StudentProfileData, StudentCertification, StudentSkillRoadmap } fr
 import { Progress } from '@/components/ui/progress';
 import { ProgressCircle } from '@/components/ui/progress-circle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   BarChart, 
   Bar, 
@@ -59,6 +60,7 @@ import {
 } from 'lucide-react';
 import { Flame } from 'lucide-react';
 import { useProfilePanel } from '@/contexts/ProfilePanelContext';
+import { useAnalyticsSupabase } from '@/hooks/useAnalyticsSupabase';
 
 const chartConfig = {
   revenue: {
@@ -85,18 +87,87 @@ export function TenantAnalyticsDashboard() {
   const [selectedTenant, setSelectedTenant] = useState('all');
   const [tempTimeRange, setTempTimeRange] = useState('30d');
   const [tempSelectedTenant, setTempSelectedTenant] = useState('all');
+  const [customStart, setCustomStart] = useState<string>('');
+  const [customEnd, setCustomEnd] = useState<string>('');
+  const [customError, setCustomError] = useState<string>('');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileStudentData, setProfileStudentData] = useState<StudentProfileData | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'learning' | 'engagement' | 'events' | 'reports'>('overview');
   const [showStudentDialog, setShowStudentDialog] = useState(false);
   const [segmentFilter, setSegmentFilter] = useState<'excellent' | 'good' | 'at_risk' | null>(null);
-  const [customStart, setCustomStart] = useState<string>('');
-  const [customEnd, setCustomEnd] = useState<string>('');
-  const [customError, setCustomError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const applyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const applyTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { analyticsData, isLoading, error } = useAnalyticsSupabase(timeRange, selectedTenant);
+
+  // Show loading state while analytics data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-40" />
+          </div>
+        </div>
+
+        {/* KPI Cards Loading */}
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-5" />
+                  </div>
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts Loading */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center text-destructive">
+              <p className="font-medium">Failed to load analytics data</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Please try refreshing the page or contact support if the problem persists.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Persist user preference for time range
   React.useEffect(() => {
