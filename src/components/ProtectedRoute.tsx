@@ -16,11 +16,12 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  const shouldShowLoading = isLoading || (user !== null && !user.role);
 
-  console.log('ProtectedRoute check:', { user: user?.email, role: user?.role, isLoading, path: location.pathname });
+  console.log('ProtectedRoute check:', { user: user?.email, role: user?.role, isLoading, shouldShowLoading, path: location.pathname });
 
   // Show loading state while checking authentication
-  if (isLoading) {
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
