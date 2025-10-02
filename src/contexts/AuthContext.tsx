@@ -19,7 +19,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         
         if (session?.user) {
-          // Keep loading true until profile is fetched
+          // Explicitly keep loading true while we fetch the profile
+          setIsLoading(true);
           console.log('Fetching profile for user:', session.user.id);
           setTimeout(() => {
             fetchUserProfile(session.user.id);
