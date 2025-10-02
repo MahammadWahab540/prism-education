@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType, UserRole } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,16 +18,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         
         if (session?.user) {
-          // Explicitly keep loading true while we fetch the profile
-          setIsLoading(true);
-          console.log('Fetching profile for user:', session.user.id);
+          // Defer profile fetching to avoid deadlock
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);
         } else {
-          console.log('No session, setting user to null');
           setUser(null);
-          setIsLoading(false);
+          setIsLoading(false); // Only set loading to false when there's no user
         }
       }
     );
@@ -61,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar: profile.avatar_url,
           createdAt: profile.created_at
         };
-        console.log('Profile fetched successfully:', user);
         setUser(user);
       } else {
         console.error('Error fetching profile:', error);
@@ -71,8 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching profile:', error);
       setUser(null);
     } finally {
-      // Always set loading to false after profile fetch completes
-      console.log('Setting isLoading to false');
+      // THIS IS THE KEY CHANGE:
+      // Always set loading to false AFTER the profile fetch attempt is complete.
       setIsLoading(false);
     }
   };
