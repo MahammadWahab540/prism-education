@@ -12,6 +12,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const profileRequestIdRef = useRef(0);
 
   useEffect(() => {
+    // This function runs when the component is unmounted to prevent memory leaks
     return () => {
       isMountedRef.current = false;
     };
@@ -123,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
       throw error;
     }
+    // onAuthStateChange will handle the rest
   };
 
   const logout = async () => {
@@ -130,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error('Error signing out:', error);
     }
+    // onAuthStateChange will handle clearing the user
   };
 
   return (
