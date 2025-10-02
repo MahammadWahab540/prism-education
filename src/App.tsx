@@ -37,8 +37,6 @@ const AccountSettingsRoute = React.lazy(() => import('@/pages/AccountSettingsRou
 const LearningHistory = React.lazy(() => import('@/pages/LearningHistory'));
 
 function AppContent() {
-  const { user } = useAuth();
-
   return (
     <NotificationProvider>
       <LearningPathProvider>
