@@ -17,15 +17,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
-        setIsLoading(false);
         
         if (session?.user) {
-          // Defer profile fetching to avoid deadlock
+          // Keep loading true until profile is fetched
+          console.log('Fetching profile for user:', session.user.id);
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);
         } else {
+          console.log('No session, setting user to null');
           setUser(null);
+          setIsLoading(false);
         }
       }
     );
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar: profile.avatar_url,
           createdAt: profile.created_at
         };
+        console.log('Profile fetched successfully:', user);
         setUser(user);
       } else {
         console.error('Error fetching profile:', error);
@@ -66,6 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error fetching profile:', error);
       setUser(null);
+    } finally {
+      // Always set loading to false after profile fetch completes
+      console.log('Setting isLoading to false');
+      setIsLoading(false);
     }
   };
 

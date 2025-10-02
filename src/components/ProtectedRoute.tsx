@@ -17,6 +17,8 @@ export function ProtectedRoute({
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
+  console.log('ProtectedRoute check:', { user: user?.email, role: user?.role, isLoading, path: location.pathname });
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (

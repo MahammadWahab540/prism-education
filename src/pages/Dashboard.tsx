@@ -11,6 +11,8 @@ import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
 
+  console.log('Dashboard render:', { user: user?.email, role: user?.role, isLoading });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
