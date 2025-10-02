@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { User, AuthContextType, UserRole } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
@@ -7,35 +7,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isMountedRef = useRef(true);
+  const profileRequestIdRef = useRef(0);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        if (session?.user) {
-          // Fetch profile. The loading state will be set to false inside this function.
-          fetchUserProfile(session.user.id);
-        } else {
-          setUser(null);
-          setIsLoading(false); // No user, so we are done loading.
-        }
-      }
-    );
-
-    // Check for existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    // This function runs when the component is unmounted to prevent memory leaks
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    const requestId = profileRequestIdRef.current + 1;
+    profileRequestIdRef.current = requestId;
+    setIsLoading(true);
+    console.log('Fetching profile for user:', userId);
+
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -43,38 +31,97 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
 
-      if (profile && !error) {
-        const user: User = {
-          id: profile.id,
-          email: profile.email,
-          name: profile.name,
-          role: profile.role as UserRole,
-          tenantId: profile.tenant_id,
-          avatar: profile.avatar_url,
-          createdAt: profile.created_at
-        };
-        setUser(user);
-      } else {
+      if (error || !profile) {
         console.error('Error fetching profile:', error);
-        setUser(null);
+        if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+          setUser(null);
+        }
+        return;
+      }
+
+      const mappedUser: User = {
+        id: profile.id,
+        email: profile.email,
+        name: profile.name,
+        role: profile.role as UserRole,
+        tenantId: profile.tenant_id,
+        avatar: profile.avatar_url,
+        createdAt: profile.created_at
+      };
+
+      console.log('Profile fetched successfully:', mappedUser);
+
+      if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+        setUser(mappedUser);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      setUser(null);
+      if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+        setUser(null);
+      }
     } finally {
-      // THIS IS THE KEY: We only set loading to false AFTER the profile fetch is fully complete.
-      setIsLoading(false);
+      if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
+
+  const handleSessionChange = useCallback(async (session: Session | null) => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    if (session?.user) {
+      console.log('Auth session confirmed:', session.user.id);
+      await fetchUserProfile(session.user.id);
+      return;
+    }
+
+    profileRequestIdRef.current += 1;
+    console.log('No active session, clearing auth state');
+    setUser(null);
+    setIsLoading(false);
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    const initialize = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Error retrieving session:', error);
+      }
+
+      await handleSessionChange(data.session ?? null);
+    };
+
+    initialize();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSessionChange(session).catch((error) => {
+        console.error('Error handling auth state change:', error);
+      });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [handleSessionChange]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      setIsLoading(false); // Clear loading on login error
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      setIsLoading(false);
       throw error;
     }
     // onAuthStateChange will handle the rest

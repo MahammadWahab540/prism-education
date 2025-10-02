@@ -10,10 +10,11 @@ import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
+  const shouldShowLoading = isLoading || (user !== null && !user.role);
 
-  console.log('Dashboard render:', { user: user?.email, role: user?.role, isLoading });
+  console.log('Dashboard render:', { user: user?.email, role: user?.role, isLoading, shouldShowLoading });
 
-  if (isLoading) {
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
