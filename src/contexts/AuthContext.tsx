@@ -14,17 +14,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
-        
         if (session?.user) {
-          // Defer profile fetching to avoid deadlock
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
+          // Fetch profile. The loading state will be set to false inside this function.
+          fetchUserProfile(session.user.id);
         } else {
           setUser(null);
-          setIsLoading(false); // Only set loading to false when there's no user
+          setIsLoading(false); // No user, so we are done loading.
         }
       }
     );
@@ -66,35 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching profile:', error);
       setUser(null);
     } finally {
-      // THIS IS THE KEY CHANGE:
-      // Always set loading to false AFTER the profile fetch attempt is complete.
+      // THIS IS THE KEY: We only set loading to false AFTER the profile fetch is fully complete.
       setIsLoading(false);
     }
   };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      // The onAuthStateChange will handle setting the user and clearing loading
-    } catch (error) {
-      setIsLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      setIsLoading(false); // Clear loading on login error
       throw error;
-    } finally {
-      // Ensure loading is cleared after timeout as fallback
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 5000);
     }
+    // onAuthStateChange will handle the rest
   };
 
   const logout = async () => {
@@ -102,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error('Error signing out:', error);
     }
-    // The onAuthStateChange will handle clearing the user
+    // onAuthStateChange will handle clearing the user
   };
 
   return (
