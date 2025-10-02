@@ -1,6 +1,8 @@
+// src/App.tsx
+
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+// REMOVED: QueryClient and QueryClientProvider are no longer imported here.
+import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationSupabase';
 import { LearningPathProvider } from '@/contexts/LearningPathSupabase';
 import { StudentRouteGuard } from '@/components/guards/StudentRouteGuard';
@@ -36,6 +38,7 @@ import NotFound from '@/pages/NotFound';
 const AccountSettingsRoute = React.lazy(() => import('@/pages/AccountSettingsRoute'));
 const LearningHistory = React.lazy(() => import('@/pages/LearningHistory'));
 
+// This function does not need any changes.
 function AppContent() {
   return (
     <NotificationProvider>
@@ -81,14 +84,14 @@ function AppContent() {
   );
 }
 
+// THE CHANGE IS HERE:
 function App() {
-  const [queryClient] = React.useState(() => new QueryClient());
+  // REMOVED: const [queryClient] = React.useState(() => new QueryClient());
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <AppContent />
-        </QueryClientProvider>
+        {/* REMOVED: The <QueryClientProvider> wrapper is gone. */}
+        <AppContent />
       </AuthProvider>
     </ThemeProvider>
   );
