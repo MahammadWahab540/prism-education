@@ -25,14 +25,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Fetching profile for user:', userId);
 
     try {
-      const { data: profile, error } = await supabase
+      // Fetch profile data
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error || !profile) {
-        console.error('Error fetching profile:', error);
+      if (profileError || !profile) {
+        console.error('Error fetching profile:', profileError);
+        if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+          setUser(null);
+        }
+        return;
+      }
+
+      // Fetch role from user_roles table
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (roleError || !roleData) {
+        console.error('Error fetching role:', roleError);
         if (isMountedRef.current && profileRequestIdRef.current === requestId) {
           setUser(null);
         }
@@ -43,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: profile.id,
         email: profile.email,
         name: profile.name,
-        role: profile.role as UserRole,
+        role: roleData.role as UserRole,
         tenantId: profile.tenant_id,
         avatar: profile.avatar_url,
         createdAt: profile.created_at

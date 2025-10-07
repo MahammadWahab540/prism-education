@@ -177,12 +177,20 @@ export class SupabaseAPI {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysAgo);
 
+    // Get student user IDs from user_roles table
+    const { data: studentRoles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'student');
+
+    const studentIds = studentRoles?.map(r => r.user_id) || [];
+
     // Get student count and activity
     const { data: students } = await supabase
       .from('profiles')
       .select('id, total_watch_time_hours, streak_days, engagement_score')
       .eq('tenant_id', tenantId)
-      .eq('role', 'student')
+      .in('id', studentIds)
       .eq('is_active', true);
 
     // Get recent learning sessions

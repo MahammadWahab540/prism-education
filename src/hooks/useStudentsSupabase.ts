@@ -33,8 +33,23 @@ export interface Tenant {
 const fetchStudents = async (user: any, tenantId?: string): Promise<Student[]> => {
   if (!user) return [];
 
-  // For platform owners, we can filter by tenant
-  // For tenant admins, we only show their tenant's students
+  // First, get student user IDs from user_roles table
+  let studentRolesQuery = supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', 'student');
+
+  const { data: studentRoles, error: rolesError } = await studentRolesQuery;
+
+  if (rolesError) {
+    throw new Error(`Failed to load student roles: ${rolesError.message}`);
+  }
+
+  const studentIds = studentRoles?.map(r => r.user_id) || [];
+  
+  if (studentIds.length === 0) return [];
+
+  // Now fetch profiles for these students
   let query = supabase
     .from('profiles')
     .select(`
@@ -48,7 +63,7 @@ const fetchStudents = async (user: any, tenantId?: string): Promise<Student[]> =
       created_at,
       updated_at
     `)
-    .eq('role', 'student');
+    .in('id', studentIds);
 
   if (user.role === 'tenant_admin') {
     query = query.eq('tenant_id', user.tenantId);

@@ -690,7 +690,6 @@ export type Database = {
           name: string
           phone: string | null
           preferred_role: string | null
-          role: Database["public"]["Enums"]["user_role"]
           salary_expectation: number | null
           streak_days: number | null
           tenant_id: string | null
@@ -709,7 +708,6 @@ export type Database = {
           name: string
           phone?: string | null
           preferred_role?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
           salary_expectation?: number | null
           streak_days?: number | null
           tenant_id?: string | null
@@ -728,7 +726,6 @@ export type Database = {
           name?: string
           phone?: string | null
           preferred_role?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
           salary_expectation?: number | null
           streak_days?: number | null
           tenant_id?: string | null
@@ -971,6 +968,10 @@ export type Database = {
         Returns: number
       }
       get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      get_user_role_safe: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
