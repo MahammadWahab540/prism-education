@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RaiseTicketModal } from './RaiseTicketModal';
 import { Search, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import { useSupabaseSkills } from '@/hooks/useSupabaseSkills';
-import { useLearningPath } from '@/contexts/LearningPathContext';
+import { useLearningPath } from '@/contexts/LearningPathSupabase';
 
 interface SkillsSelectorProps {
   careerGoal: any;

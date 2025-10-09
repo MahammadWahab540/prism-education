@@ -9,7 +9,7 @@ import { CareerGoalSelector } from '@/components/learning-path/CareerGoalSelecto
 import { SkillsSelector } from '@/components/learning-path/SkillsSelector';
 import { useToast } from '@/hooks/use-toast';
 import { Target, BookOpen, Trophy } from 'lucide-react';
-import { useLearningPath } from '@/contexts/LearningPathContext';
+import { useLearningPath } from '@/contexts/LearningPathSupabase';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function LearningPath() {

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLearningPath } from '@/contexts/LearningPathContext';
+import { useLearningPath } from '@/contexts/LearningPathSupabase';
 import { Target, ArrowRight, Clock } from 'lucide-react';
 
 export function OnboardingBanner() {
