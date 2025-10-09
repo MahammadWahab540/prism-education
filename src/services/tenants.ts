@@ -86,9 +86,45 @@ function saveTenants(list: Tenant[]) {
 }
 
 export async function fetchTenants(): Promise<Tenant[]> {
-  // Simulate latency
-  await new Promise((r) => setTimeout(r, 250));
-  return loadTenants();
+  const { supabase } = await import('@/integrations/supabase/client');
+  
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new ApiError(error.message, 500);
+
+  // Count users per tenant
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('tenant_id, id');
+
+  const usedSeatsMap = new Map<string, number>();
+  profiles?.forEach(p => {
+    if (p.tenant_id) {
+      usedSeatsMap.set(p.tenant_id, (usedSeatsMap.get(p.tenant_id) || 0) + 1);
+    }
+  });
+
+  const tenants: Tenant[] = (data || []).map(t => {
+    const settings = (t.settings as any) || {};
+    return {
+      id: t.id,
+      createdAt: t.created_at,
+      name: t.name,
+      slug: t.domain,
+      adminEmail: settings.adminEmail || '',
+      adminPhone: settings.adminPhone,
+      plan: settings.plan || 'pro',
+      status: t.is_active ? 'active' : 'paused',
+      accountQuota: settings.accountQuota || 5,
+      usedSeats: usedSeatsMap.get(t.id) || 0,
+      category: settings.category || 'Other',
+    };
+  });
+
+  return tenants;
 }
 
 export class ApiError extends Error {
@@ -105,24 +141,130 @@ export async function createTenant(input: NewTenantInput): Promise<Tenant> {
     throw new ApiError('Validation failed', 400);
   }
 
-  // Simulate latency
-  await new Promise((r) => setTimeout(r, 400));
+  // Import Supabase client dynamically
+  const { supabase } = await import('@/integrations/supabase/client');
 
-  const existing = loadTenants();
-  const duplicate = existing.some((t) => t.slug.toLowerCase() === input.slug.toLowerCase());
-  if (duplicate) {
-    // 409 Conflict for duplicate slug
+  // Check for duplicate slug
+  const { data: existing } = await supabase
+    .from('tenants')
+    .select('id')
+    .eq('domain', input.slug)
+    .single();
+
+  if (existing) {
     throw new ApiError('Slug already in use', 409);
   }
 
+  // Create tenant
+  const { data: tenantData, error: tenantError } = await supabase
+    .from('tenants')
+    .insert({
+      name: input.name,
+      domain: input.slug,
+      is_active: input.status === 'active',
+      settings: {
+        plan: input.plan,
+        accountQuota: input.accountQuota,
+        category: input.category,
+        adminPhone: input.adminPhone,
+      },
+    })
+    .select()
+    .single();
+
+  if (tenantError) throw new ApiError(tenantError.message, 500);
+
+  // Create admin user
+  const temporaryPassword = Math.random().toString(36).slice(-8) + 'A1!';
+  
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: input.adminEmail,
+    password: temporaryPassword,
+    email_confirm: false,
+    user_metadata: {
+      name: input.name + ' Admin',
+    },
+  });
+
+  if (authError) {
+    // Rollback tenant creation
+    await supabase.from('tenants').delete().eq('id', tenantData.id);
+    throw new ApiError(authError.message, 500);
+  }
+
+  if (!authData.user) {
+    await supabase.from('tenants').delete().eq('id', tenantData.id);
+    throw new ApiError('Failed to create admin user', 500);
+  }
+
+  // Create profile
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: authData.user.id,
+      email: input.adminEmail,
+      name: input.name + ' Admin',
+      tenant_id: tenantData.id,
+      is_active: true,
+    });
+
+  if (profileError) {
+    await supabase.auth.admin.deleteUser(authData.user.id);
+    await supabase.from('tenants').delete().eq('id', tenantData.id);
+    throw new ApiError(profileError.message, 500);
+  }
+
+  // Assign tenant_admin role
+  const { error: roleError } = await supabase
+    .from('user_roles')
+    .insert({
+      user_id: authData.user.id,
+      role: 'tenant_admin',
+      tenant_id: tenantData.id,
+    });
+
+  if (roleError) {
+    await supabase.auth.admin.deleteUser(authData.user.id);
+    await supabase.from('tenants').delete().eq('id', tenantData.id);
+    throw new ApiError(roleError.message, 500);
+  }
+
+  // Send welcome email with credentials
+  try {
+    const { data: emailResponse, error: emailError } = await supabase.functions.invoke('send-tenant-welcome', {
+      body: {
+        tenantId: tenantData.id,
+        adminEmail: input.adminEmail,
+        adminName: input.name + ' Admin',
+        tenantName: input.name,
+        temporaryPassword,
+      },
+    });
+
+    if (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+    } else {
+      console.log('Welcome email sent:', emailResponse);
+    }
+  } catch (emailErr) {
+    console.error('Failed to send welcome email:', emailErr);
+    // Don't fail the entire operation if email fails
+  }
+
   const tenant: Tenant = {
-    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-    createdAt: new Date().toISOString(),
-    ...input,
-    usedSeats: 0,
+    id: tenantData.id,
+    createdAt: tenantData.created_at,
+    name: input.name,
+    slug: input.slug,
+    adminEmail: input.adminEmail,
+    adminPhone: input.adminPhone,
+    plan: input.plan,
+    status: input.status,
+    accountQuota: input.accountQuota,
+    usedSeats: 1, // Admin user counts as 1 seat
+    category: input.category,
   };
-  const next = [tenant, ...existing];
-  saveTenants(next);
+  
   return tenant;
 }
 
