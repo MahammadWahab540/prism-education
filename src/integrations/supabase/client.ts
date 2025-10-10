@@ -13,5 +13,30 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+  },
+  db: {
+    schema: 'public'
+  },
+  global: {
+    headers: {
+      'apikey': SUPABASE_PUBLISHABLE_KEY,
+      'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+    }
   }
 });
+
+// Log 400 errors for debugging
+if (typeof window !== 'undefined') {
+  const originalFetch = window.fetch;
+  window.fetch = async (...args) => {
+    const response = await originalFetch(...args);
+    if (response.status === 400 && args[0]?.toString().includes('supabase.co')) {
+      console.error('Supabase 400 Error:', {
+        url: args[0],
+        headers: args[1]?.headers,
+        status: response.status
+      });
+    }
+    return response;
+  };
+}
