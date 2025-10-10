@@ -54,6 +54,14 @@ export function useSystemUsersSupabase() {
   } = useQuery({
     queryKey: ['system-users'],
     queryFn: async (): Promise<SystemUser[]> => {
+      // Check authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('User not authenticated:', sessionError);
+        return [];
+      }
+
       // Fetch users with platform_owner, system_admin, tenant_admin, or content_manager roles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
@@ -64,7 +72,10 @@ export function useSystemUsersSupabase() {
         `)
         .in('role', ['platform_owner', 'tenant_admin']);
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        throw rolesError;
+      }
 
       if (!userRoles || userRoles.length === 0) {
         return [];
@@ -111,7 +122,7 @@ export function useSystemUsersSupabase() {
 
       return users;
     },
-    enabled: !!user,
+    enabled: !!user && user.role === 'platform_owner',
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 

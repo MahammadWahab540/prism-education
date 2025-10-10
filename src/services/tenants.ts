@@ -88,17 +88,32 @@ function saveTenants(list: Tenant[]) {
 export async function fetchTenants(): Promise<Tenant[]> {
   const { supabase } = await import('@/integrations/supabase/client');
   
+  // Check if user is authenticated
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError || !session) {
+    console.error('User not authenticated:', sessionError);
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('tenants')
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) throw new ApiError(error.message, 500);
+  if (error) {
+    console.error('Error fetching tenants:', error);
+    throw new ApiError(error.message, 500);
+  }
 
   // Count users per tenant
-  const { data: profiles } = await supabase
+  const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
     .select('tenant_id, id');
+
+  if (profilesError) {
+    console.error('Error fetching profiles for seat count:', profilesError);
+  }
 
   const usedSeatsMap = new Map<string, number>();
   profiles?.forEach(p => {

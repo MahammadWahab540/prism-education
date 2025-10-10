@@ -37,6 +37,7 @@ export function PlatformOwnerDashboard() {
   const { data: tenantsData = [], isLoading: isTenantsLoading } = useQuery({
     queryKey: TenantsQueryKey,
     queryFn: fetchTenants,
+    enabled: !!user && user.role === 'platform_owner',
   });
 
   // Fetch real stats from Supabase
@@ -45,25 +46,44 @@ export function PlatformOwnerDashboard() {
     queryFn: async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       
+      // Check authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('Not authenticated for stats');
+        return { totalProfiles: 0, studentCount: 0, completions: 0 };
+      }
+
       // Get total profiles count
-      const { count: totalProfiles } = await supabase
+      const { count: totalProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
+      if (profilesError) {
+        console.error('Error fetching profiles count:', profilesError);
+      }
+
       // Get student count
-      const { data: studentRoles } = await supabase
+      const { data: studentRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
         .eq('role', 'student');
 
+      if (rolesError) {
+        console.error('Error fetching student roles:', rolesError);
+      }
+
       const studentCount = studentRoles?.length || 0;
 
       // Get course completions (from learning_sessions where completed = true)
-      const { count: completions } = await supabase
+      const { count: completions, error: completionsError } = await supabase
         .from('learning_sessions')
         .select('*', { count: 'exact', head: true })
         .eq('completed', true);
+
+      if (completionsError) {
+        console.error('Error fetching completions:', completionsError);
+      }
 
       return {
         totalProfiles: totalProfiles || 0,
@@ -71,6 +91,7 @@ export function PlatformOwnerDashboard() {
         completions: completions || 0,
       };
     },
+    enabled: !!user && user.role === 'platform_owner',
   });
 
   const stats = [
