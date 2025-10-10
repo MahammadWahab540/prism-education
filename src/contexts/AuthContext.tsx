@@ -30,10 +30,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (profileError || !profile) {
+      if (profileError) {
         console.error('Error fetching profile:', profileError);
+        if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+          setUser(null);
+        }
+        return;
+      }
+
+      if (!profile) {
+        console.warn('No profile found for user:', userId);
         if (isMountedRef.current && profileRequestIdRef.current === requestId) {
           setUser(null);
         }
@@ -45,10 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (roleError || !roleData) {
+      if (roleError) {
         console.error('Error fetching role:', roleError);
+        if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+          setUser(null);
+        }
+        return;
+      }
+
+      if (!roleData) {
+        console.warn('No role found for user:', userId);
         if (isMountedRef.current && profileRequestIdRef.current === requestId) {
           setUser(null);
         }
