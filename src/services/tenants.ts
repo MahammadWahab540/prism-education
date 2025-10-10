@@ -164,7 +164,7 @@ export async function createTenant(input: NewTenantInput): Promise<Tenant> {
     .from('tenants')
     .select('id')
     .eq('domain', input.slug)
-    .maybeSingle();
+    .single();
 
   if (existing) {
     throw new ApiError('Slug already in use', 409);
@@ -185,7 +185,7 @@ export async function createTenant(input: NewTenantInput): Promise<Tenant> {
       },
     })
     .select()
-    .maybeSingle();
+    .single();
 
   if (tenantError) throw new ApiError(tenantError.message, 500);
 

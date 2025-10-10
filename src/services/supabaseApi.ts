@@ -19,7 +19,7 @@ export class SupabaseAPI {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .maybeSingle();
+      .single();
 
     if (error) throw error;
     return data;
@@ -42,7 +42,7 @@ export class SupabaseAPI {
       .update(updates)
       .eq('id', user.id)
       .select()
-      .maybeSingle();
+      .single();
 
     if (error) throw error;
     return data;
@@ -74,7 +74,7 @@ export class SupabaseAPI {
         session_end: new Date().toISOString(),
       })
       .select()
-      .maybeSingle();
+      .single();
 
     if (error) throw error;
 
@@ -84,7 +84,7 @@ export class SupabaseAPI {
         .from('profiles')
         .select('total_watch_time_hours')
         .eq('id', user.id)
-        .maybeSingle();
+        .single();
         
       const currentHours = currentProfile?.total_watch_time_hours || 0;
       const additionalHours = params.watchTimeSeconds / 3600;
@@ -126,7 +126,7 @@ export class SupabaseAPI {
         onConflict: 'user_id,skill_id'
       })
       .select()
-      .maybeSingle();
+      .single();
 
     if (error) throw error;
     return data;
@@ -162,7 +162,7 @@ export class SupabaseAPI {
         settings: tenantData.settings || {},
       })
       .select()
-      .maybeSingle();
+      .single();
 
     if (error) throw error;
     return data;
@@ -303,7 +303,7 @@ export class SupabaseAPI {
         status: 'Draft', // Start as draft for review
       })
       .select()
-      .maybeSingle();
+      .single();
 
     if (error) throw error;
     return data;
