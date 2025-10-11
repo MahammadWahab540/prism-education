@@ -25,44 +25,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Fetching profile for user:', userId);
 
     try {
-      // Fetch profile data
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+      // Use optimized view for single query
+      const { data: profile, error } = await supabase
+        .from('user_profile_with_role' as any)
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
-      if (profileError || !profile) {
-        console.error('Error fetching profile:', profileError);
+      if (error || !profile) {
+        console.error('Error fetching profile:', error);
         if (isMountedRef.current && profileRequestIdRef.current === requestId) {
           setUser(null);
         }
         return;
       }
 
-      // Fetch role from user_roles table
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (roleError || !roleData) {
-        console.error('Error fetching role:', roleError);
-        if (isMountedRef.current && profileRequestIdRef.current === requestId) {
-          setUser(null);
-        }
-        return;
-      }
-
+      const profileData = profile as any;
       const mappedUser: User = {
-        id: profile.id,
-        email: profile.email,
-        name: profile.name,
-        role: roleData.role as UserRole,
-        tenantId: profile.tenant_id,
-        avatar: profile.avatar_url,
-        createdAt: profile.created_at
+        id: profileData.id,
+        email: profileData.email,
+        name: profileData.name,
+        role: profileData.role as UserRole,
+        tenantId: profileData.tenant_id,
+        avatar: profileData.avatar_url,
+        createdAt: profileData.created_at
       };
 
       console.log('Profile fetched successfully:', mappedUser);
