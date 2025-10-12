@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
+import { useSupportSupabase } from '@/hooks/useSupportSupabase';
 import { 
   Plus, 
   Ticket, 
@@ -23,179 +23,83 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-// Mock data for tickets and announcements
-const mockTickets = [
-  {
-    id: 'T001',
-    title: 'Video Playback Issues',
-    description: 'Students report that course videos are not loading in their browsers',
-    status: 'open',
-    priority: 'high',
-    category: 'Technical',
-    submittedAt: '2024-01-15T10:30:00Z',
-    responses: [
-      {
-        id: 'R001',
-        author: 'Platform Support',
-        message: 'We have received your ticket and are investigating the video playback issue. We will update you within 24 hours.',
-        timestamp: '2024-01-15T11:00:00Z',
-        isInternal: true
-      }
-    ]
-  },
-  {
-    id: 'T002',
-    title: 'Bulk Student Import',
-    description: 'Need assistance with importing 200+ students via CSV file',
-    status: 'resolved',
-    priority: 'medium',
-    category: 'Feature Request',
-    submittedAt: '2024-01-10T14:20:00Z',
-    responses: [
-      {
-        id: 'R002',
-        author: 'Platform Support',
-        message: 'The bulk import feature is now available in your admin panel. You can access it under Students > Import.',
-        timestamp: '2024-01-12T16:45:00Z',
-        isInternal: true
-      }
-    ]
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'open': return 'destructive';
+    case 'in_progress': return 'default';
+    case 'resolved': return 'secondary';
+    default: return 'outline';
   }
-];
+};
 
-const mockAnnouncements = [
-  {
-    id: 'A001',
-    title: 'Welcome to Spring Semester 2024',
-    content: 'We are excited to welcome all students to the new semester. Please check your course schedules and complete the orientation modules.',
-    priority: 'high',
-    targetAudience: 'all_students',
-    publishedAt: '2024-01-15T09:00:00Z',
-    expiresAt: '2024-01-30T23:59:59Z',
-    isActive: true,
-    viewCount: 245,
-    author: 'Academic Office'
-  },
-  {
-    id: 'A002',
-    title: 'Library Hours Extended',
-    content: 'Starting this week, the digital library will be available 24/7. Access your resources anytime through the Library tab.',
-    priority: 'medium',
-    targetAudience: 'all_students',
-    publishedAt: '2024-01-12T14:00:00Z',
-    expiresAt: '2024-02-15T23:59:59Z',
-    isActive: true,
-    viewCount: 189,
-    author: 'Library Services'
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'high': return 'destructive';
+    case 'medium': return 'default';
+    case 'low': return 'secondary';
+    default: return 'outline';
   }
-];
+};
 
 export function TenantAdminSupport() {
-  const [tickets, setTickets] = useState(mockTickets);
-  const [announcements, setAnnouncements] = useState(mockAnnouncements);
+  const { 
+    tickets, 
+    announcements, 
+    isLoading, 
+    createTicket, 
+    createAnnouncement, 
+    toggleAnnouncement,
+    isCreatingTicket,
+    isCreatingAnnouncement
+  } = useSupportSupabase();
+  
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [newTicket, setNewTicket] = useState({
     title: '',
     description: '',
-    priority: 'medium',
+    priority: 'medium' as 'low' | 'medium' | 'high',
     category: 'general'
   });
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: '',
     content: '',
-    priority: 'medium',
-    targetAudience: 'all_students',
-    expiresAt: ''
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    target_audience: 'all_students',
+    expires_at: '',
+    author_name: 'Admin'
   });
-  const { toast } = useToast();
 
   const handleSubmitTicket = () => {
-    if (!newTicket.title.trim() || !newTicket.description.trim()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!newTicket.title.trim() || !newTicket.description.trim()) return;
 
-    const ticket = {
-      id: `T${String(tickets.length + 1).padStart(3, '0')}`,
-      ...newTicket,
-      status: 'open',
-      submittedAt: new Date().toISOString(),
-      responses: []
-    };
-
-    setTickets(prev => [ticket, ...prev]);
+    createTicket(newTicket as any);
     setNewTicket({ title: '', description: '', priority: 'medium', category: 'general' });
     setShowTicketForm(false);
-    
-    toast({
-      title: "Ticket Submitted",
-      description: "Your support ticket has been submitted successfully",
-    });
   };
 
   const handlePublishAnnouncement = () => {
-    if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) return;
 
-    const announcement = {
-      id: `A${String(announcements.length + 1).padStart(3, '0')}`,
-      ...newAnnouncement,
-      publishedAt: new Date().toISOString(),
-      isActive: true,
-      viewCount: 0,
-      author: 'Admin'
-    };
-
-    setAnnouncements(prev => [announcement, ...prev]);
+    createAnnouncement(newAnnouncement as any);
     setNewAnnouncement({
       title: '',
       content: '',
       priority: 'medium',
-      targetAudience: 'all_students',
-      expiresAt: ''
+      target_audience: 'all_students',
+      expires_at: '',
+      author_name: 'Admin'
     });
     setShowAnnouncementForm(false);
-    
-    toast({
-      title: "Announcement Published",
-      description: "Your announcement has been published to students",
-    });
   };
 
-  const toggleAnnouncementStatus = (id: string) => {
-    setAnnouncements(prev => prev.map(ann => 
-      ann.id === id ? { ...ann, isActive: !ann.isActive } : ann
-    ));
+  const handleToggleAnnouncement = (id: string, isActive: boolean) => {
+    toggleAnnouncement({ id, is_active: !isActive });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'destructive';
-      case 'in_progress': return 'default';
-      case 'resolved': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
-      default: return 'outline';
-    }
-  };
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -288,10 +192,10 @@ export function TenantAdminSupport() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="ticket-priority">Priority</Label>
-                          <Select 
-                            value={newTicket.priority} 
-                            onValueChange={(value) => setNewTicket(prev => ({ ...prev, priority: value }))}
-                          >
+                         <Select 
+                           value={newTicket.priority} 
+                           onValueChange={(value: 'low' | 'medium' | 'high') => setNewTicket(prev => ({ ...prev, priority: value }))}
+                         >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -354,10 +258,10 @@ export function TenantAdminSupport() {
                             </div>
                             <h3 className="font-semibold mb-1">{ticket.title}</h3>
                             <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>Submitted: {new Date(ticket.submittedAt).toLocaleDateString()}</span>
-                              <span>Responses: {ticket.responses.length}</span>
-                            </div>
+                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                               <span>Submitted: {new Date(ticket.submitted_at).toLocaleDateString()}</span>
+                               <span>Responses: {ticket.responses.length}</span>
+                             </div>
                           </div>
                           <Button variant="outline" size="sm">
                             <MessageSquare className="h-4 w-4 mr-2" />
@@ -415,10 +319,10 @@ export function TenantAdminSupport() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="announcement-priority">Priority</Label>
-                          <Select 
-                            value={newAnnouncement.priority} 
-                            onValueChange={(value) => setNewAnnouncement(prev => ({ ...prev, priority: value }))}
-                          >
+                           <Select 
+                             value={newAnnouncement.priority} 
+                             onValueChange={(value: 'low' | 'medium' | 'high') => setNewAnnouncement(prev => ({ ...prev, priority: value }))}
+                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -431,10 +335,10 @@ export function TenantAdminSupport() {
                         </div>
                         <div>
                           <Label htmlFor="announcement-audience">Target Audience</Label>
-                          <Select 
-                            value={newAnnouncement.targetAudience} 
-                            onValueChange={(value) => setNewAnnouncement(prev => ({ ...prev, targetAudience: value }))}
-                          >
+                           <Select 
+                             value={newAnnouncement.target_audience} 
+                             onValueChange={(value) => setNewAnnouncement(prev => ({ ...prev, target_audience: value }))}
+                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -451,8 +355,8 @@ export function TenantAdminSupport() {
                         <Input
                           id="announcement-expires"
                           type="datetime-local"
-                          value={newAnnouncement.expiresAt}
-                          onChange={(e) => setNewAnnouncement(prev => ({ ...prev, expiresAt: e.target.value }))}
+                          value={newAnnouncement.expires_at}
+                          onChange={(e) => setNewAnnouncement(prev => ({ ...prev, expires_at: e.target.value }))}
                         />
                       </div>
                       <Button onClick={handlePublishAnnouncement} className="w-full">
@@ -473,7 +377,7 @@ export function TenantAdminSupport() {
                   </div>
                 ) : (
                   announcements.map((announcement) => (
-                    <Card key={announcement.id} className={`${announcement.isActive ? '' : 'opacity-60'}`}>
+                    <Card key={announcement.id} className={`${announcement.is_active ? '' : 'opacity-60'}`}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -481,27 +385,27 @@ export function TenantAdminSupport() {
                               <Badge variant={getPriorityColor(announcement.priority)}>
                                 {announcement.priority.toUpperCase()}
                               </Badge>
-                              <Badge variant="outline">{announcement.targetAudience.replace('_', ' ')}</Badge>
-                              <Badge variant={announcement.isActive ? 'default' : 'secondary'}>
-                                {announcement.isActive ? 'Active' : 'Inactive'}
+                              <Badge variant="outline">{announcement.target_audience.replace('_', ' ')}</Badge>
+                              <Badge variant={announcement.is_active ? 'default' : 'secondary'}>
+                                {announcement.is_active ? 'Active' : 'Inactive'}
                               </Badge>
                             </div>
                             <h3 className="font-semibold mb-1">{announcement.title}</h3>
                             <p className="text-sm text-muted-foreground mb-2">{announcement.content}</p>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>Published: {new Date(announcement.publishedAt).toLocaleDateString()}</span>
-                              <span><Users className="h-3 w-3 inline mr-1" />{announcement.viewCount} views</span>
-                              {announcement.expiresAt && (
-                                <span>Expires: {new Date(announcement.expiresAt).toLocaleDateString()}</span>
+                              <span>Published: {new Date(announcement.published_at).toLocaleDateString()}</span>
+                              <span><Users className="h-3 w-3 inline mr-1" />{announcement.view_count} views</span>
+                              {announcement.expires_at && (
+                                <span>Expires: {new Date(announcement.expires_at).toLocaleDateString()}</span>
                               )}
                             </div>
                           </div>
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => toggleAnnouncementStatus(announcement.id)}
+                            onClick={() => handleToggleAnnouncement(announcement.id, announcement.is_active)}
                           >
-                            {announcement.isActive ? 'Deactivate' : 'Activate'}
+                            {announcement.is_active ? 'Deactivate' : 'Activate'}
                           </Button>
                         </div>
                       </CardContent>

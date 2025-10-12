@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useSupportSupabase } from '@/hooks/useSupportSupabase';
 import { 
   Ticket, 
   Clock, 
@@ -22,137 +22,43 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-// Mock data for tickets from tenants
-const mockTickets = [
-  {
-    id: 'T001',
-    title: 'Login Issues for Multiple Students',
-    description: 'Students are unable to login to the platform. Getting authentication errors.',
-    status: 'open',
-    priority: 'high',
-    tenant: 'University of Technology',
-    tenantId: 'tenant-1',
-    submittedBy: 'admin@university.edu',
-    submittedAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-15T14:20:00Z',
-    category: 'Authentication',
-    responses: [
-      {
-        id: 'R001',
-        author: 'admin@university.edu',
-        message: 'This started happening after the maintenance yesterday. Affecting about 50+ students.',
-        timestamp: '2024-01-15T10:35:00Z',
-        isInternal: false
-      }
-    ]
-  },
-  {
-    id: 'T002',
-    title: 'Course Video Playback Problems',
-    description: 'Video content is not loading properly in Safari browsers.',
-    status: 'in_progress',
-    priority: 'medium',
-    tenant: 'Metro College',
-    tenantId: 'tenant-2',
-    submittedBy: 'support@metro.edu',
-    submittedAt: '2024-01-14T09:15:00Z',
-    updatedAt: '2024-01-15T11:00:00Z',
-    category: 'Technical',
-    responses: [
-      {
-        id: 'R002',
-        author: 'support@metro.edu',
-        message: 'The issue appears to be browser-specific. Chrome works fine.',
-        timestamp: '2024-01-14T09:20:00Z',
-        isInternal: false
-      },
-      {
-        id: 'R003',
-        author: 'platform-support',
-        message: 'We are investigating the Safari compatibility issue. Will update soon.',
-        timestamp: '2024-01-15T11:00:00Z',
-        isInternal: true
-      }
-    ]
-  },
-  {
-    id: 'T003',
-    title: 'Bulk Student Import Feature Request',
-    description: 'Need ability to import multiple students via CSV file upload.',
-    status: 'resolved',
-    priority: 'low',
-    tenant: 'City Academy',
-    tenantId: 'tenant-3',
-    submittedBy: 'admin@cityacademy.edu',
-    submittedAt: '2024-01-10T14:20:00Z',
-    updatedAt: '2024-01-13T16:45:00Z',
-    category: 'Feature Request',
-    responses: [
-      {
-        id: 'R004',
-        author: 'admin@cityacademy.edu',
-        message: 'Currently have to add 200+ students manually which is very time consuming.',
-        timestamp: '2024-01-10T14:25:00Z',
-        isInternal: false
-      },
-      {
-        id: 'R005',
-        author: 'platform-support',
-        message: 'This feature has been implemented and is now available in your admin panel.',
-        timestamp: '2024-01-13T16:45:00Z',
-        isInternal: true
-      }
-    ]
-  }
-];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'open': return 'destructive';
-    case 'in_progress': return 'default';
-    case 'resolved': return 'secondary';
-    default: return 'outline';
-  }
-};
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'high': return 'destructive';
-    case 'medium': return 'default';
-    case 'low': return 'secondary';
-    default: return 'outline';
-  }
-};
-
 export function PlatformOwnerSupport() {
-  const [tickets, setTickets] = useState(mockTickets);
+  const { tickets, isLoading, updateTicket } = useSupportSupabase();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [newResponse, setNewResponse] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const { toast } = useToast();
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'open': return 'destructive';
+      case 'in_progress': return 'default';
+      case 'resolved': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'destructive';
+      case 'medium': return 'default';
+      case 'low': return 'secondary';
+      default: return 'outline';
+    }
+  };
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || ticket.priority === priorityFilter;
     const matchesSearch = ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         ticket.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         ticket.tenant.toLowerCase().includes(searchQuery.toLowerCase());
+                         ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
   const handleStatusChange = (ticketId: string, newStatus: string) => {
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: newStatus, updatedAt: new Date().toISOString() }
-        : ticket
-    ));
-    toast({
-      title: "Status Updated",
-      description: `Ticket status changed to ${newStatus}`,
-    });
+    updateTicket({ id: ticketId, status: newStatus as any });
   };
 
   const handleAddResponse = () => {
@@ -166,26 +72,22 @@ export function PlatformOwnerSupport() {
       isInternal: true
     };
 
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === selectedTicket.id 
-        ? { 
-            ...ticket, 
-            responses: [...ticket.responses, response],
-            updatedAt: new Date().toISOString()
-          }
-        : ticket
-    ));
+    const updatedResponses = [...selectedTicket.responses, response];
+    updateTicket({ 
+      id: selectedTicket.id, 
+      responses: updatedResponses as any
+    });
 
     setNewResponse('');
-    toast({
-      title: "Response Added",
-      description: "Your response has been sent to the tenant",
-    });
   };
 
   const openTickets = tickets.filter(t => t.status === 'open').length;
   const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
   const highPriorityTickets = tickets.filter(t => t.priority === 'high').length;
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading support tickets...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -295,7 +197,7 @@ export function PlatformOwnerSupport() {
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>From: {ticket.tenant}</span>
                         <span>By: {ticket.submittedBy}</span>
-                        <span>Updated: {new Date(ticket.updatedAt).toLocaleDateString()}</span>
+                        <span>Updated: {new Date(ticket.updated_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -332,7 +234,7 @@ export function PlatformOwnerSupport() {
                                   <AvatarFallback>{ticket.submittedBy.charAt(0).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <span className="text-xs text-muted-foreground">
-                                  {ticket.submittedBy} • {new Date(ticket.submittedAt).toLocaleString()}
+                                  {ticket.submittedBy || ticket.user_id} • {new Date(ticket.submitted_at).toLocaleString()}
                                 </span>
                               </div>
                             </div>

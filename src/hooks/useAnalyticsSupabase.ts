@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AnalyticsData {
   learningProgressData: Array<{
@@ -41,55 +42,121 @@ export interface AnalyticsData {
   }>;
 }
 
-const generateMockAnalytics = (timeRange: string, tenantId?: string): AnalyticsData => {
-  // Generate data based on time range
-  const months = timeRange === '7d' ? 1 : timeRange === '30d' ? 6 : timeRange === '90d' ? 12 : 24;
-  
-  const learningProgressData = Array.from({ length: months }, (_, i) => ({
-    month: new Date(2024, i, 1).toLocaleDateString('en', { month: 'short' }),
-    completions: Math.floor(Math.random() * 200) + 100,
-    enrollments: Math.floor(Math.random() * 400) + 200,
-    watchTime: Math.floor(Math.random() * 3000) + 1500,
-  }));
+const fetchAnalyticsData = async (timeRange: string, tenantId?: string): Promise<AnalyticsData> => {
+  // Fetch profiles
+  const { data: students, error: studentsError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('is_active', true);
 
-  const studentPerformanceData = Array.from({ length: 50 }, (_, i) => {
-    const progress = Math.floor(Math.random() * 100);
-    const segment: 'excellent' | 'good' | 'at_risk' = progress >= 80 ? 'excellent' : progress >= 60 ? 'good' : 'at_risk';
-    
+  if (studentsError) throw studentsError;
+
+  // Fetch skill progress for all students
+  const { data: allSkillProgress } = await supabase
+    .from('skill_progress')
+    .select('*');
+
+  // Fetch learning sessions for engagement trends
+  const daysBack = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+
+  const { data: sessions } = await supabase
+    .from('learning_sessions')
+    .select('*')
+    .gte('created_at', startDate.toISOString());
+
+  // Fetch skills
+  const { data: skills } = await supabase
+    .from('skills')
+    .select('*')
+    .eq('is_active', true);
+
+  // Process learning progress data
+  const monthsCount = timeRange === '7d' ? 1 : timeRange === '30d' ? 6 : timeRange === '90d' ? 12 : 24;
+  const learningProgressData = Array.from({ length: monthsCount }, (_, i) => {
+    const monthDate = new Date();
+    monthDate.setMonth(monthDate.getMonth() - (monthsCount - 1 - i));
+    const monthName = monthDate.toLocaleDateString('en', { month: 'short' });
+
+    const monthSessions = sessions?.filter(s => {
+      const sessionDate = new Date(s.created_at);
+      return sessionDate.getMonth() === monthDate.getMonth() &&
+             sessionDate.getFullYear() === monthDate.getFullYear();
+    }) || [];
+
     return {
-      name: `Student ${i + 1}`,
-      email: `student${i + 1}@email.com`,
-      phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      location: ['New York, NY', 'San Francisco, CA', 'Austin, TX', 'Seattle, WA'][Math.floor(Math.random() * 4)],
-      coursesEnrolled: Math.floor(Math.random() * 8) + 2,
-      coursesCompleted: Math.floor(Math.random() * 5) + 1,
-      overallProgress: progress,
-      averageScore: Math.floor(Math.random() * 30) + 70,
-      totalWatchTime: Math.floor(Math.random() * 2000) + 500,
-      lastActive: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      segment,
-      skills: [
-        { name: 'JavaScript', progress: Math.floor(Math.random() * 100), status: 'in_progress' as const },
-        { name: 'React', progress: Math.floor(Math.random() * 100), status: 'completed' as const },
-        { name: 'Node.js', progress: Math.floor(Math.random() * 50), status: 'not_started' as const },
-      ],
+      month: monthName,
+      completions: monthSessions.filter((s: any) => s.completed).length,
+      enrollments: monthSessions.length,
+      watchTime: monthSessions.reduce((sum: number, s: any) => sum + (s.watch_time_seconds || 0), 0) / 60,
     };
   });
 
-  const skillCompletionData = [
-    { skill: 'JavaScript', completed: 245, inProgress: 156, notStarted: 89 },
-    { skill: 'React', completed: 198, inProgress: 123, notStarted: 134 },
-    { skill: 'Python', completed: 167, inProgress: 189, notStarted: 98 },
-    { skill: 'Data Science', completed: 134, inProgress: 167, notStarted: 145 },
-    { skill: 'Machine Learning', completed: 98, inProgress: 145, notStarted: 189 },
-  ];
+  // Process student performance data
+  const studentPerformanceData = (students || []).map((student: any) => {
+    const studentProgress = allSkillProgress?.filter((sp: any) => sp.user_id === student.id) || [];
+    const totalProgress = studentProgress.reduce((sum: number, sp: any) => sum + (sp.overall_progress_percent || 0), 0);
+    const avgProgress = studentProgress.length > 0 ? totalProgress / studentProgress.length : 0;
+    const avgScore = studentProgress.reduce((sum: number, sp: any) => sum + (sp.average_quiz_score || 0), 0) / (studentProgress.length || 1);
+    
+    const segment: 'excellent' | 'good' | 'at_risk' = 
+      avgProgress >= 80 ? 'excellent' : avgProgress >= 60 ? 'good' : 'at_risk';
 
-  const engagementTrends = Array.from({ length: 30 }, (_, i) => ({
-    date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    activeUsers: Math.floor(Math.random() * 200) + 100,
-    sessionsStarted: Math.floor(Math.random() * 300) + 150,
-    avgSessionDuration: Math.floor(Math.random() * 45) + 15,
-  }));
+    return {
+      name: student.name,
+      email: student.email,
+      phone: student.phone || '',
+      location: student.location || '',
+      coursesEnrolled: studentProgress.length,
+      coursesCompleted: studentProgress.filter((sp: any) => sp.completed_at).length,
+      overallProgress: Math.round(avgProgress),
+      averageScore: Math.round(avgScore),
+      totalWatchTime: student.total_watch_time_hours || 0,
+      lastActive: student.updated_at,
+      segment,
+      skills: studentProgress.map((sp: any) => ({
+        name: 'Skill',
+        progress: sp.overall_progress_percent || 0,
+        status: sp.completed_at ? 'completed' as const : 'in_progress' as const,
+      })),
+    };
+  });
+
+  // Process skill completion data
+  const skillCompletionData = (skills || []).map((skill: any) => {
+    const skillProgresses = allSkillProgress?.filter((sp: any) => sp.skill_id === skill.id) || [];
+    const completed = skillProgresses.filter((sp: any) => sp.completed_at).length;
+    const inProgress = skillProgresses.filter((sp: any) => !sp.completed_at && sp.overall_progress_percent > 0).length;
+    const notStarted = Math.max(0, (students?.length || 0) - completed - inProgress);
+
+    return {
+      skill: skill.name,
+      completed,
+      inProgress,
+      notStarted,
+    };
+  });
+
+  // Process engagement trends
+  const engagementTrends = Array.from({ length: Math.min(30, daysBack) }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (Math.min(30, daysBack) - 1 - i));
+    const dateStr = date.toISOString().split('T')[0];
+
+    const daySessions = sessions?.filter((s: any) => s.created_at.startsWith(dateStr)) || [];
+    const uniqueUsers = new Set(daySessions.map((s: any) => s.user_id)).size;
+    const avgDuration = daySessions.length > 0
+      ? daySessions.reduce((sum: number, s: any) => sum + (s.watch_time_seconds || 0), 0) / daySessions.length / 60
+      : 0;
+
+    return {
+      date: dateStr,
+      activeUsers: uniqueUsers,
+      sessionsStarted: daySessions.length,
+      avgSessionDuration: Math.round(avgDuration),
+    };
+  });
 
   return {
     learningProgressData,
@@ -105,14 +172,7 @@ export function useAnalyticsSupabase(timeRange: string = '30d', tenantId?: strin
 
   const { data: analyticsData, isLoading, error } = useQuery({
     queryKey: ['analytics', timeRange, tenantId],
-    queryFn: () => {
-      // Simulate API delay
-      return new Promise<AnalyticsData>((resolve) => {
-        setTimeout(() => {
-          resolve(generateMockAnalytics(timeRange, tenantId));
-        }, 1000);
-      });
-    },
+    queryFn: () => fetchAnalyticsData(timeRange, tenantId),
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

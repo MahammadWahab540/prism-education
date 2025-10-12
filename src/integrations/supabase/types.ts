@@ -14,6 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          id?: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          author_name: string | null
+          content: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: string
+          published_at: string
+          target_audience: string
+          tenant_id: string | null
+          title: string
+          view_count: number | null
+        }
+        Insert: {
+          author_name?: string | null
+          content: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string
+          published_at?: string
+          target_audience?: string
+          tenant_id?: string | null
+          title: string
+          view_count?: number | null
+        }
+        Update: {
+          author_name?: string | null
+          content?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string
+          published_at?: string
+          target_audience?: string
+          tenant_id?: string | null
+          title?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -866,6 +948,56 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          category: string
+          description: string
+          id: string
+          priority: string
+          responses: Json | null
+          status: string
+          submitted_at: string
+          tenant_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          description: string
+          id?: string
+          priority?: string
+          responses?: Json | null
+          status?: string
+          submitted_at?: string
+          tenant_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          description?: string
+          id?: string
+          priority?: string
+          responses?: Json | null
+          status?: string
+          submitted_at?: string
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           description: string | null
@@ -926,6 +1058,94 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profile_with_role: {
+        Row: {
+          available_from: string | null
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          engagement_score: number | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          name: string
+          phone: string | null
+          preferred_role: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          role_created_at: string | null
+          role_tenant_id: string | null
+          salary_expectation: number | null
+          streak_days: number | null
+          tenant_id: string | null
+          total_watch_time_hours: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          available_from?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          engagement_score?: number | null
+          id: string
+          is_active?: boolean | null
+          location?: string | null
+          name: string
+          phone?: string | null
+          preferred_role?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          role_created_at?: string | null
+          role_tenant_id?: string | null
+          salary_expectation?: number | null
+          streak_days?: number | null
+          tenant_id?: string | null
+          total_watch_time_hours?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          available_from?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          engagement_score?: number | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          name?: string
+          phone?: string | null
+          preferred_role?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          role_created_at?: string | null
+          role_tenant_id?: string | null
+          salary_expectation?: number | null
+          streak_days?: number | null
+          tenant_id?: string | null
+          total_watch_time_hours?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profile_with_role_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profile_with_role_role_tenant_id_fkey"
+            columns: ["role_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profile_with_role_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -967,6 +1187,47 @@ export type Database = {
         Args: { user_id: string }
         Returns: number
       }
+      get_current_user_tenant: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_platform_owners: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          email: string
+          name: string
+          user_id: string
+        }[]
+      }
+      get_user_profile_robust: {
+        Args: { user_id: string }
+        Returns: Json
+      }
+      get_user_profile_with_role: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          available_from: string
+          avatar_url: string
+          created_at: string
+          email: string
+          engagement_score: number
+          id: string
+          is_active: boolean
+          location: string
+          name: string
+          phone: string
+          preferred_role: string
+          role: Database["public"]["Enums"]["user_role"]
+          role_created_at: string
+          role_tenant_id: string
+          salary_expectation: number
+          streak_days: number
+          tenant_id: string
+          total_watch_time_hours: number
+          updated_at: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -975,9 +1236,21 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      get_user_roles: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"][]
+      }
       get_user_tenant: {
         Args: { _user_id: string }
         Returns: string
+      }
+      has_current_user_role: {
+        Args: { role_name: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
+      }
+      has_platform_owner: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -990,13 +1263,25 @@ export type Database = {
         Args: { additional_seconds: number; user_id: string }
         Returns: undefined
       }
-      is_platform_owner: {
+      is_admin: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_platform_owner: {
+        Args: Record<PropertyKey, never> | { _user_id: string }
         Returns: boolean
       }
       is_tenant_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      promote_to_platform_owner: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
+      test_profile_access: {
+        Args: { test_user_id: string }
+        Returns: Json
       }
       update_user_streak: {
         Args: { user_id: string }

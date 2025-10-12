@@ -8,7 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
+import { useSupportSupabase } from '@/hooks/useSupportSupabase';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Plus, 
   MessageSquare, 
@@ -25,170 +28,93 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-// Mock data for student tickets and announcements
-const mockStudentTickets = [
-  {
-    id: 'ST001',
-    title: 'Cannot access course videos',
-    description: 'I am unable to play video content in my Data Science course. The videos show loading but never start.',
-    status: 'in_progress',
-    priority: 'medium',
-    category: 'Technical',
-    submittedAt: '2024-01-14T10:30:00Z',
-    responses: [
-      {
-        id: 'R001',
-        author: 'Technical Support',
-        message: 'Hi! We have received your report about video playback issues. Our team is investigating this. Meanwhile, try clearing your browser cache.',
-        timestamp: '2024-01-14T11:00:00Z',
-        isInternal: true
-      }
-    ]
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'open': return 'destructive';
+    case 'in_progress': return 'default';
+    case 'resolved': return 'secondary';
+    default: return 'outline';
   }
-];
+};
 
-const mockAnnouncements = [
-  {
-    id: 'A001',
-    title: 'Welcome to Spring Semester 2024',
-    content: 'We are excited to welcome all students to the new semester. Please check your course schedules and complete the orientation modules by January 20th.',
-    priority: 'high',
-    publishedAt: '2024-01-15T09:00:00Z',
-    author: 'Academic Office',
-    isRead: false
-  },
-  {
-    id: 'A002',
-    title: 'Library Hours Extended',
-    content: 'Starting this week, the digital library will be available 24/7. Access your resources anytime through the Library tab in your dashboard.',
-    priority: 'medium',
-    publishedAt: '2024-01-12T14:00:00Z',
-    author: 'Library Services',
-    isRead: true
-  },
-  {
-    id: 'A003',
-    title: 'Upcoming Course Deadline',
-    content: 'Reminder: Assignment submissions for Introduction to Programming are due this Friday at 11:59 PM.',
-    priority: 'high',
-    publishedAt: '2024-01-10T08:00:00Z',
-    author: 'Course Instructor',
-    isRead: true
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'high': return 'destructive';
+    case 'medium': return 'default';
+    case 'low': return 'secondary';
+    default: return 'outline';
   }
-];
+};
 
-const mockNotifications = [
-  {
-    id: 'N001',
-    type: 'assignment',
-    title: 'New assignment available',
-    message: 'A new assignment has been posted in your Data Structures course.',
-    timestamp: '2024-01-15T16:30:00Z',
-    isRead: false,
-    actionUrl: '/assignments'
-  },
-  {
-    id: 'N002',
-    type: 'grade',
-    title: 'Grade published',
-    message: 'Your grade for the midterm exam is now available.',
-    timestamp: '2024-01-15T14:20:00Z',
-    isRead: false,
-    actionUrl: '/grades'
-  },
-  {
-    id: 'N003',
-    type: 'announcement',
-    title: 'New announcement',
-    message: 'Check out the latest announcement from the Academic Office.',
-    timestamp: '2024-01-15T09:15:00Z',
-    isRead: true,
-    actionUrl: '/help-support'
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case 'assignment': return BookOpen;
+    case 'grade': return Star;
+    case 'announcement': return Megaphone;
+    default: return Bell;
   }
-];
+};
 
 export function StudentSupport() {
-  const [tickets, setTickets] = useState(mockStudentTickets);
-  const [announcements, setAnnouncements] = useState(mockAnnouncements);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const { user } = useAuth();
+  const { 
+    tickets, 
+    announcements, 
+    isLoading, 
+    createTicket, 
+    markAnnouncementRead,
+    isCreatingTicket
+  } = useSupportSupabase();
+  
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [newTicket, setNewTicket] = useState({
     title: '',
     description: '',
     category: 'general'
   });
-  const { toast } = useToast();
+
+  // Fetch notifications from database
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
   const handleSubmitTicket = () => {
-    if (!newTicket.title.trim() || !newTicket.description.trim()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!newTicket.title.trim() || !newTicket.description.trim()) return;
 
-    const ticket = {
-      id: `ST${String(tickets.length + 1).padStart(3, '0')}`,
-      ...newTicket,
-      status: 'open',
-      priority: 'medium',
-      submittedAt: new Date().toISOString(),
-      responses: []
-    };
-
-    setTickets(prev => [ticket, ...prev]);
+    createTicket({ ...newTicket, priority: 'medium' as any, status: 'open' as any } as any);
     setNewTicket({ title: '', description: '', category: 'general' });
     setShowTicketForm(false);
-    
-    toast({
-      title: "Help Request Submitted",
-      description: "Your request has been sent. We'll respond within 24 hours.",
-    });
   };
 
-  const markAnnouncementAsRead = (id: string) => {
-    setAnnouncements(prev => prev.map(ann => 
-      ann.id === id ? { ...ann, isRead: true } : ann
-    ));
+  const handleMarkAnnouncementRead = (id: string) => {
+    markAnnouncementRead(id);
   };
 
-  const markNotificationAsRead = (id: string) => {
-    setNotifications(prev => prev.map(notif => 
-      notif.id === id ? { ...notif, isRead: true } : notif
-    ));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'destructive';
-      case 'in_progress': return 'default';
-      case 'resolved': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'assignment': return BookOpen;
-      case 'grade': return Star;
-      case 'announcement': return Megaphone;
-      default: return Bell;
-    }
+  const handleMarkNotificationRead = async (id: string) => {
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', id);
   };
 
   const unreadAnnouncements = announcements.filter(a => !a.isRead).length;
-  const unreadNotifications = notifications.filter(n => !n.isRead).length;
+  const unreadNotifications = notifications.filter((n: any) => !n.is_read).length;
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -353,10 +279,10 @@ export function StudentSupport() {
                             </div>
                             <h3 className="font-semibold mb-1">{ticket.title}</h3>
                             <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>Submitted: {new Date(ticket.submittedAt).toLocaleDateString()}</span>
-                              <span>Responses: {ticket.responses.length}</span>
-                            </div>
+                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                               <span>Submitted: {new Date(ticket.submitted_at).toLocaleDateString()}</span>
+                               <span>Responses: {ticket.responses.length}</span>
+                             </div>
                           </div>
                           <Button variant="outline" size="sm">
                             <MessageSquare className="h-4 w-4 mr-2" />
@@ -381,39 +307,39 @@ export function StudentSupport() {
             <CardContent>
               <div className="space-y-4">
                 {announcements.map((announcement) => (
-                  <Card 
-                    key={announcement.id} 
-                    className={`cursor-pointer hover:shadow-md transition-shadow ${
-                      !announcement.isRead ? 'border-blue-200 bg-blue-50' : ''
-                    }`}
-                    onClick={() => markAnnouncementAsRead(announcement.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={getPriorityColor(announcement.priority)}>
-                              {announcement.priority.toUpperCase()}
-                            </Badge>
-                            {!announcement.isRead && (
-                              <Badge variant="default">New</Badge>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              From: {announcement.author}
-                            </span>
-                          </div>
-                          <h3 className="font-semibold mb-2 flex items-center gap-2">
-                            <Megaphone className="h-4 w-4" />
-                            {announcement.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mb-2">{announcement.content}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Published: {new Date(announcement.publishedAt).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                   <Card 
+                     key={announcement.id} 
+                     className={`cursor-pointer hover:shadow-md transition-shadow ${
+                       !announcement.isRead ? 'border-blue-200 bg-blue-50' : ''
+                     }`}
+                     onClick={() => handleMarkAnnouncementRead(announcement.id)}
+                   >
+                     <CardContent className="p-4">
+                       <div className="flex items-start justify-between">
+                         <div className="flex-1">
+                           <div className="flex items-center gap-2 mb-2">
+                             <Badge variant={getPriorityColor(announcement.priority)}>
+                               {announcement.priority.toUpperCase()}
+                             </Badge>
+                             {!announcement.isRead && (
+                               <Badge variant="default">New</Badge>
+                             )}
+                             <span className="text-xs text-muted-foreground">
+                               From: {announcement.author_name || 'Admin'}
+                             </span>
+                           </div>
+                           <h3 className="font-semibold mb-2 flex items-center gap-2">
+                             <Megaphone className="h-4 w-4" />
+                             {announcement.title}
+                           </h3>
+                           <p className="text-sm text-muted-foreground mb-2">{announcement.content}</p>
+                           <p className="text-xs text-muted-foreground">
+                             Published: {new Date(announcement.published_at).toLocaleString()}
+                           </p>
+                         </div>
+                       </div>
+                     </CardContent>
+                   </Card>
                 ))}
               </div>
             </CardContent>
@@ -434,25 +360,25 @@ export function StudentSupport() {
                     <Card 
                       key={notification.id} 
                       className={`cursor-pointer hover:shadow-md transition-shadow ${
-                        !notification.isRead ? 'border-blue-200 bg-blue-50' : ''
+                        !notification.is_read ? 'border-blue-200 bg-blue-50' : ''
                       }`}
-                      onClick={() => markNotificationAsRead(notification.id)}
+                      onClick={() => handleMarkNotificationRead(notification.id)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-full ${notification.isRead ? 'bg-muted' : 'bg-primary/10'}`}>
-                            <IconComponent className={`h-4 w-4 ${notification.isRead ? 'text-muted-foreground' : 'text-primary'}`} />
+                          <div className={`p-2 rounded-full ${notification.is_read ? 'bg-muted' : 'bg-primary/10'}`}>
+                            <IconComponent className={`h-4 w-4 ${notification.is_read ? 'text-muted-foreground' : 'text-primary'}`} />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <h4 className="font-medium">{notification.title}</h4>
-                              {!notification.isRead && (
+                              {!notification.is_read && (
                                 <Badge variant="default" className="h-5 text-xs">New</Badge>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(notification.timestamp).toLocaleString()}
+                              {new Date(notification.created_at).toLocaleString()}
                             </p>
                           </div>
                           <Button variant="ghost" size="sm">
