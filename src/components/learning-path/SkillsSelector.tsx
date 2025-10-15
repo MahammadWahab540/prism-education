@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
 import { RaiseTicketModal } from './RaiseTicketModal';
 import { Search, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
-import { mockSkills, mockGoalSkillMap } from '@/lib/mockData';
-import { getAllSkills } from '@/lib/skillsStore';
-import { useLearningPath } from '@/contexts/LearningPathContext';
+import { useSupabaseSkills } from '@/hooks/useSupabaseSkills';
+import { useLearningPath } from '@/contexts/LearningPathSupabase';
 
 interface SkillsSelectorProps {
   careerGoal: any;
@@ -19,37 +19,84 @@ interface SkillsSelectorProps {
 
 export function SkillsSelector({ careerGoal, onSkillsSelect, selectedSkills }: SkillsSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [availableSkills, setAvailableSkills] = useState<any[]>([]);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const { markOnboardingComplete } = useLearningPath();
+  const { skills, loading, error } = useSupabaseSkills();
 
-  useEffect(() => {
-    // If goal comes from dynamic careers store, prefer its linked skills
-    if (careerGoal && Array.isArray(careerGoal.linkedSkillIds) && careerGoal.linkedSkillIds.length > 0) {
-      const storeSkills = getAllSkills();
-      const mapped = careerGoal.linkedSkillIds
-        .map((id: string) => storeSkills.find(s => String(s.id) === String(id)))
-        .filter(Boolean)
-        .map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          category: s.scope || 'Global',
-          difficulty: 'Beginner',
-          is_active: true,
-        }));
-      setAvailableSkills(mapped);
-      return;
+  // Filter skills based on career goal's linked skills if available
+  const availableSkills = skills.filter(skill => {
+    // If goal has linkedSkillIds, only show those skills
+    if (careerGoal?.linkedSkillIds?.length > 0) {
+      return careerGoal.linkedSkillIds.includes(skill.id);
     }
-    // Fallback to mock mapping for legacy goals
-    const skillMappings = mockGoalSkillMap.filter(mapping => mapping.goal_id === careerGoal.id);
-    const skillIds = skillMappings.map(mapping => mapping.skill_id);
-    const skills = mockSkills.filter(skill => skillIds.includes(skill.id) && skill.is_active);
-    setAvailableSkills(skills);
-  }, [careerGoal.id]);
+    // Otherwise show all active skills
+    return skill.isActive;
+  });
+
+  // Show loading state while skills are being fetched
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-card">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-6 w-6 text-primary" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-64" />
+                <Skeleton className="h-4 w-80" />
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+        <Card className="glass-card">
+          <CardContent className="pt-6 space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <div className="grid gap-4 md:grid-cols-2">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="h-4 w-4" />
+                        <Skeleton className="h-5 w-3/4" />
+                      </div>
+                      <Skeleton className="h-4 w-full" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-5 w-20" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-card border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center text-destructive">
+              <p className="font-medium">Failed to load skills</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Please try refreshing the page or contact support if the problem persists.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const filteredSkills = availableSkills.filter(skill =>
     skill.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    skill.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (skill.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSkillToggle = (skill: any) => {
@@ -173,7 +220,7 @@ export function SkillsSelector({ careerGoal, onSkillsSelect, selectedSkills }: S
                       
                       <div className="mt-3 flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Est. Duration</span>
-                        <span className="font-medium">{skill.estimated_hours}h</span>
+                        <span className="font-medium">{skill.estimatedHours}h</span>
                       </div>
                     </CardContent>
                   </Card>

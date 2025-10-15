@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLearningPath } from '@/contexts/LearningPathContext';
+import { useLearningPath } from '@/contexts/LearningPathSupabase';
 
 interface StudentRouteGuardProps {
   children: React.ReactNode;

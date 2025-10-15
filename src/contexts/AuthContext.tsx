@@ -1,72 +1,140 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { User, AuthContextType, UserRole } from '@/types/auth';
+import { supabase } from '@/integrations/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock users for demo
-const mockUsers: Record<string, User> = {
-  'owner@platform.com': {
-    id: '1',
-    email: 'owner@platform.com',
-    name: 'Platform Owner',
-    role: 'platform_owner',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    createdAt: '2024-01-01'
-  },
-  'admin@tenant.com': {
-    id: '2',
-    email: 'admin@tenant.com',
-    name: 'Tenant Admin',
-    role: 'tenant_admin',
-    tenantId: 'tenant-1',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face',
-    createdAt: '2024-01-01'
-  },
-  'student@example.com': {
-    id: '3',
-    email: 'student@example.com',
-    name: 'John Student',
-    role: 'student',
-    tenantId: 'tenant-1',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    createdAt: '2024-01-01'
-  }
-};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isMountedRef = useRef(true);
+  const profileRequestIdRef = useRef(0);
 
   useEffect(() => {
-    // Check for stored auth
-    const storedUser = localStorage.getItem('lms-user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // This function runs when the component is unmounted to prevent memory leaks
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
+
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    const requestId = profileRequestIdRef.current + 1;
+    profileRequestIdRef.current = requestId;
+    setIsLoading(true);
+    console.log('Fetching profile for user:', userId);
+
+    try {
+      // Use optimized view for single query
+      const { data: profile, error } = await supabase
+        .from('user_profile_with_role' as any)
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error || !profile) {
+        console.error('Error fetching profile:', error);
+        if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+          setUser(null);
+        }
+        return;
+      }
+
+      const profileData = profile as any;
+      const mappedUser: User = {
+        id: profileData.id,
+        email: profileData.email,
+        name: profileData.name,
+        role: profileData.role as UserRole,
+        tenantId: profileData.tenant_id,
+        avatar: profileData.avatar_url,
+        createdAt: profileData.created_at
+      };
+
+      console.log('Profile fetched successfully:', mappedUser);
+
+      if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+        setUser(mappedUser);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+        setUser(null);
+      }
+    } finally {
+      if (isMountedRef.current && profileRequestIdRef.current === requestId) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  const handleSessionChange = useCallback(async (session: Session | null) => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    if (session?.user) {
+      console.log('Auth session confirmed:', session.user.id);
+      await fetchUserProfile(session.user.id);
+      return;
+    }
+
+    profileRequestIdRef.current += 1;
+    console.log('No active session, clearing auth state');
+    setUser(null);
+    setIsLoading(false);
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    const initialize = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Error retrieving session:', error);
+      }
+
+      await handleSessionChange(data.session ?? null);
+    };
+
+    initialize();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSessionChange(session).catch((error) => {
+        console.error('Error handling auth state change:', error);
+      });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [handleSessionChange]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const user = mockUsers[email];
-    if (user && password === 'password') {
-      setUser(user);
-      localStorage.setItem('lms-user', JSON.stringify(user));
-    } else {
-      throw new Error('Invalid credentials');
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
     }
-    
-    setIsLoading(false);
+    // onAuthStateChange will handle the rest
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('lms-user');
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+    }
+    // onAuthStateChange will handle clearing the user
   };
 
   return (

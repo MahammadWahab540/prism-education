@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { ProgressCircle } from '@/components/ui/progress-circle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Plus, 
   UserPlus, 
@@ -38,151 +39,113 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudentMetrics } from '@/hooks/useStudentMetrics';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useStudentsSupabase, type Student, type Tenant } from '@/hooks/useStudentsSupabase';
 import { toast } from '@/components/ui/use-toast';
 import { exportStudentsToCsv } from '@/services/export';
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  graduationYear: number;
-  batch: string;
-  careerChoice?: string;
-  enrolledSkills: number;
-  completedSkills: number;
-  overallProgress: number;
-  lastActive: Date;
-  enrollmentDate: Date;
-  status: 'active' | 'inactive' | 'suspended';
-  currentSkill?: string;
-  totalWatchTime: number;
-  quizzesCompleted: number;
-  averageScore: number;
-  tenantId: string;
-}
-
-interface Tenant {
-  id: string;
-  name: string;
-  domain: string;
-  studentCount: number;
-}
 
 export function StudentManagement() {
   const { user } = useAuth();
   const isPlatformOwner = user?.role === 'platform_owner';
   
-  // Mock tenants data for platform owner
-  const [tenants] = useState<Tenant[]>([
-    { id: 'tenant-1', name: 'University of Technology', domain: 'tech.edu', studentCount: 5 },
-    { id: 'tenant-2', name: 'Business School International', domain: 'bschool.edu', studentCount: 8 },
-    { id: 'tenant-3', name: 'Medical University', domain: 'meduni.edu', studentCount: 12 },
-  ]);
-  
   const [selectedTenant, setSelectedTenant] = useState<string>(
-    isPlatformOwner ? '' : user?.tenantId || 'tenant-1'
+    isPlatformOwner ? '' : user?.tenantId || ''
   );
   const [tenantSearchTerm, setTenantSearchTerm] = useState('');
-  
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: '1',
-      name: 'Alice Johnson',
-      email: 'alice.johnson@university.edu',
-      graduationYear: 2025,
-      batch: 'CS-2025-A',
-      careerChoice: 'Software Engineer',
-      enrolledSkills: 5,
-      completedSkills: 3,
-      overallProgress: 78,
-      lastActive: new Date('2024-08-26'),
-      enrollmentDate: new Date('2024-01-15'),
-      status: 'active',
-      currentSkill: 'Machine Learning Basics',
-      totalWatchTime: 1250,
-      quizzesCompleted: 12,
-      averageScore: 85,
-      tenantId: 'tenant-1'
-    },
-    {
-      id: '2',
-      name: 'Bob Smith',
-      email: 'bob.smith@university.edu',
-      graduationYear: 2026,
-      batch: 'BBA-2026-B',
-      careerChoice: 'Product Manager',
-      enrolledSkills: 3,
-      completedSkills: 1,
-      overallProgress: 45,
-      lastActive: new Date('2024-08-25'),
-      enrollmentDate: new Date('2024-02-01'),
-      status: 'active',
-      currentSkill: 'Data Analysis',
-      totalWatchTime: 680,
-      quizzesCompleted: 6,
-      averageScore: 72,
-      tenantId: 'tenant-1'
-    },
-    {
-      id: '3',
-      name: 'Carol Williams',
-      email: 'carol.williams@university.edu',
-      graduationYear: 2025,
-      batch: 'MBA-2025-A',
-      careerChoice: 'Data Scientist',
-      enrolledSkills: 4,
-      completedSkills: 4,
-      overallProgress: 100,
-      lastActive: new Date('2024-08-24'),
-      enrollmentDate: new Date('2024-01-10'),
-      status: 'active',
-      currentSkill: 'Leadership Skills',
-      totalWatchTime: 2100,
-      quizzesCompleted: 18,
-      averageScore: 92,
-      tenantId: 'tenant-2'
-    },
-    {
-      id: '4',
-      name: 'David Brown',
-      email: 'david.brown@university.edu',
-      graduationYear: 2026,
-      batch: 'CS-2026-B',
-      careerChoice: 'DevOps Engineer',
-      enrolledSkills: 2,
-      completedSkills: 0,
-      overallProgress: 15,
-      lastActive: new Date('2024-08-15'),
-      enrollmentDate: new Date('2024-08-01'),
-      status: 'inactive',
-      currentSkill: 'Python Programming',
-      totalWatchTime: 120,
-      quizzesCompleted: 1,
-      averageScore: 65,
-      tenantId: 'tenant-2'
-    },
-    {
-      id: '5',
-      name: 'Emma Davis',
-      email: 'emma.davis@university.edu',
-      graduationYear: 2024,
-      batch: 'Finance-2024-A',
-      careerChoice: 'Financial Analyst',
-      enrolledSkills: 6,
-      completedSkills: 2,
-      overallProgress: 62,
-      lastActive: new Date('2024-08-26'),
-      enrollmentDate: new Date('2024-01-20'),
-      status: 'active',
-      currentSkill: 'Financial Analytics',
-      totalWatchTime: 940,
-      quizzesCompleted: 9,
-      averageScore: 88,
-      tenantId: 'tenant-3'
-    }
-  ]);
 
+  const { 
+    students, 
+    tenants, 
+    isLoading, 
+    error, 
+    updateStudent, 
+    deleteStudent,
+    isUpdatingStudent,
+    isDeletingStudent
+  } = useStudentsSupabase(selectedTenant);
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-40" />
+          </div>
+        </div>
+
+        {/* KPI Cards Loading */}
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-5" />
+                  </div>
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Table Loading */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-10 w-64" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-48" />
+                      <Skeleton className="h-4 w-64" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-6 w-20" />
+                        <Skeleton className="h-6 w-24" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center text-destructive">
+              <p className="font-medium">Failed to load student data</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Please try refreshing the page or contact support if the problem persists.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isUploadCsvOpen, setIsUploadCsvOpen] = useState(false);
   const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false);
@@ -255,7 +218,6 @@ export function StudentManagement() {
       averageScore: 0,
       tenantId: selectedTenant
     };
-    setStudents([...students, student]);
     setIsAddStudentOpen(false);
     setNewStudent({
       name: '',
@@ -297,7 +259,6 @@ export function StudentManagement() {
           } as Student;
         });
       
-      setStudents(prev => [...prev, ...newStudents]);
       setIsUploadCsvOpen(false);
       setCsvFile(null);
     };
@@ -365,7 +326,7 @@ export function StudentManagement() {
   });
 
   // Metrics hook (preserved) + fallback defaults
-  const { metrics, isLoading } = useStudentMetrics(tenantFilteredStudents as any, [selectedTenant, students.length]);
+  const { metrics, isLoading: metricsLoading } = useStudentMetrics(tenantFilteredStudents as any, [selectedTenant, students.length]);
   const {
     totalStudents = tenantFilteredStudents.length,
     activeStudents = tenantFilteredStudents.filter(s => s.status === 'active').length,
@@ -576,7 +537,7 @@ export function StudentManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total Students</p>
-                    {isLoading ? (
+                    {metricsLoading ? (
                       <Skeleton className="h-7 w-20 mt-1" />
                     ) : (
                       <p className="text-3xl font-bold">{totalStudents}</p>
@@ -596,7 +557,7 @@ export function StudentManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Active Learners</p>
-                    {isLoading ? (
+                    {metricsLoading ? (
                       <Skeleton className="h-7 w-16 mt-1" />
                     ) : (
                       <p className="text-3xl font-bold">{activeStudents}</p>
@@ -616,7 +577,7 @@ export function StudentManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Avg Progress</p>
-                    {isLoading ? (
+                    {metricsLoading ? (
                       <Skeleton className="h-7 w-14 mt-1" />
                     ) : (
                       <p className="text-3xl font-bold">{avgProgress}%</p>
@@ -636,7 +597,7 @@ export function StudentManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Completions</p>
-                    {isLoading ? (
+                    {metricsLoading ? (
                       <Skeleton className="h-7 w-16 mt-1" />
                     ) : (
                       <p className="text-3xl font-bold">{totalCompletions}</p>
@@ -929,7 +890,7 @@ export function StudentManagement() {
                         className="bg-red-600 text-white hover:bg-red-700"
                         onClick={() => {
                           if (studentToRemove) {
-                            setStudents(prev => prev.filter(s => s.id !== studentToRemove.id));
+                            deleteStudent(studentToRemove.id);
                           }
                           setIsRemoveConfirmOpen(false);
                           setStudentToRemove(null);
@@ -950,7 +911,7 @@ export function StudentManagement() {
                     <CardTitle>Top Performers</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {isLoading ? (
+                    {metricsLoading ? (
                       <div className="space-y-3">
                         {[...Array(5)].map((_, i) => (
                           <Skeleton key={i} className="h-12 w-full" />
@@ -989,7 +950,7 @@ export function StudentManagement() {
                     <CardTitle>Students Needing Attention</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {isLoading ? (
+                    {metricsLoading ? (
                       <div className="space-y-3">
                         {[...Array(5)].map((_, i) => (
                           <Skeleton key={i} className="h-12 w-full" />

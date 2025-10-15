@@ -37,35 +37,91 @@ export function PlatformOwnerDashboard() {
   const { data: tenantsData = [], isLoading: isTenantsLoading } = useQuery({
     queryKey: TenantsQueryKey,
     queryFn: fetchTenants,
+    enabled: !!user && user.role === 'platform_owner',
   });
+
+  // Fetch real stats from Supabase
+  const { data: statsData } = useQuery({
+    queryKey: ['platform-stats'],
+    queryFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Check authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('Not authenticated for stats');
+        return { totalProfiles: 0, studentCount: 0, completions: 0 };
+      }
+
+      // Get total profiles count
+      const { count: totalProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      if (profilesError) {
+        console.error('Error fetching profiles count:', profilesError);
+      }
+
+      // Get student count
+      const { data: studentRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'student');
+
+      if (rolesError) {
+        console.error('Error fetching student roles:', rolesError);
+      }
+
+      const studentCount = studentRoles?.length || 0;
+
+      // Get course completions (from learning_sessions where completed = true)
+      const { count: completions, error: completionsError } = await supabase
+        .from('learning_sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('completed', true);
+
+      if (completionsError) {
+        console.error('Error fetching completions:', completionsError);
+      }
+
+      return {
+        totalProfiles: totalProfiles || 0,
+        studentCount,
+        completions: completions || 0,
+      };
+    },
+    enabled: !!user && user.role === 'platform_owner',
+  });
+
   const stats = [
     { 
       label: 'Total Tenants', 
-      value: '24', 
+      value: String(tenantsData.length), 
       icon: Building2, 
-      change: '+12%', 
+      change: tenantsData.length > 0 ? '+12%' : '0%', 
       trend: 'up' as const,
       animationType: 'progress' as const
     },
     { 
       label: 'Active Students', 
-      value: '3,247', 
+      value: String(statsData?.studentCount || 0), 
       icon: Users, 
       change: '+18%', 
       trend: 'up' as const,
       animationType: 'wave' as const
     },
     { 
-      label: 'Monthly Revenue', 
-      value: '$84,320', 
-      icon: DollarSign, 
+      label: 'Total Users', 
+      value: String(statsData?.totalProfiles || 0), 
+      icon: Globe, 
       change: '+24%', 
       trend: 'up' as const,
       animationType: 'geometric' as const
     },
     { 
       label: 'Course Completions', 
-      value: '1,892', 
+      value: String(statsData?.completions || 0), 
       icon: TrendingUp, 
       change: '+8%', 
       trend: 'up' as const,
@@ -73,14 +129,14 @@ export function PlatformOwnerDashboard() {
     }
   ];
 
-  // Map real tenants to display rows; growth is mock here
+  // Map real tenants to display rows
   const tenants = useMemo(() => {
     if (!tenantsData?.length) return [] as Array<{ name: string; students: number; status: string; growth: string; usedSeats: number; accountQuota: number }>;
     return tenantsData.map((t: any) => ({
       name: t.name,
-      students: Math.floor(Math.random() * 500) + 50,
+      students: t.usedSeats ?? 0, // Use actual user count
       status: t.status || 'active',
-      growth: `+${Math.floor(Math.random() * 40) + 5}%`,
+      growth: t.usedSeats > 0 ? `${Math.min(100, Math.round((t.usedSeats / t.accountQuota) * 100))}%` : '0%',
       usedSeats: t.usedSeats ?? 0,
       accountQuota: t.accountQuota ?? 0,
     }));

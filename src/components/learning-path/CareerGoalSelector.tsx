@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Target, TrendingUp, Users, Code, Palette, BarChart, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCareers } from '@/hooks/useCareers';
+import { useCareersSupabase } from '@/hooks/useCareersSupabase';
 
 interface CareerGoalSelectorProps {
   onGoalSelect: (goal: any) => void;
@@ -25,16 +26,79 @@ export function CareerGoalSelector({ onGoalSelect }: CareerGoalSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { user } = useAuth();
-  const careers = useCareers();
+  const { categories, goals, isLoading, error } = useCareersSupabase();
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-card">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Target className="h-6 w-6 text-primary" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+        <Card className="glass-card">
+          <CardContent className="pt-6 space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-8 w-28" />
+            </div>
+          </CardContent>
+        </Card>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-card border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center text-destructive">
+              <p className="font-medium">Failed to load career goals</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Please try refreshing the page or contact support if the problem persists.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const tenantId = user?.tenantId;
-  const categories = careers.listCategoriesForTenant(tenantId);
-  const goals = careers.listGoalsForTenant(tenantId);
+  const tenantCategories = categories.filter(c => c.isGlobal || c.tenantId === tenantId);
+  const tenantGoals = goals.filter(g => g.isGlobal || g.tenantId === tenantId);
 
-  const goalsWithCategory = useMemo(() => goals.map(g => ({
+  const goalsWithCategory = useMemo(() => tenantGoals.map(g => ({
     ...g,
-    categoryName: categories.find(c => c.id === g.categoryId)?.name || 'Other',
-  })), [goals, categories]);
+    categoryName: tenantCategories.find(c => c.id === g.categoryId)?.name || 'Other',
+  })), [tenantGoals, tenantCategories]);
 
   const filteredGoals = goalsWithCategory.filter(goal => {
     const matchesSearch = goal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,7 +148,7 @@ export function CareerGoalSelector({ onGoalSelect }: CareerGoalSelectorProps) {
             >
               All Categories
             </Button>
-            {Array.from(new Set(categories.map(c => c.name))).map((category) => (
+            {Array.from(new Set(tenantCategories.map(c => c.name))).map((category) => (
               <Button
                 key={category}
                 variant={selectedCategory === category ? "default" : "outline"}
