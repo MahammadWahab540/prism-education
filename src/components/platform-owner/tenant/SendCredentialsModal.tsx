@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/components/ui/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useMutation } from '@tanstack/react-query';
-import { CredentialPayload, sendCredentials, Tenant } from '@/services/tenants';
+import { CredentialPayload, sendCredentials, Tenant, getTenantUrl } from '@/services/tenants';
 import { track } from '@/lib/analytics';
+import { useToast } from '@/hooks/use-toast';
+import { Copy, ExternalLink } from 'lucide-react';
 
 export interface SendCredentialsModalProps {
   open: boolean;
@@ -32,13 +33,16 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function SendCredentialsModal({ open, onOpenChange, tenant, canManage }: SendCredentialsModalProps) {
+  const { toast } = useToast();
+  const tenantUrl = tenant ? getTenantUrl(tenant.slug) : '';
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       to: tenant?.adminEmail ?? '',
       cc: '',
       subject: 'Your LMS Access Credentials',
-      message: `Hello ${tenant?.name ?? ''},\n\nYou can access your LMS at https://${tenant?.slug ?? 'your-org'}.example.com.\n\nUse the link below to set your password and log in.\n\nBest regards,\nPlatform Team`,
+      message: `Hello ${tenant?.name ?? ''},\n\nYou can access your LMS at ${tenantUrl}.\n\nUse the link below to set your password and log in.\n\nBest regards,\nPlatform Team`,
       methodEmail: true,
     },
     mode: 'onChange',
@@ -46,11 +50,12 @@ export function SendCredentialsModal({ open, onOpenChange, tenant, canManage }: 
 
   React.useEffect(() => {
     if (tenant) {
+      const url = getTenantUrl(tenant.slug);
       form.reset({
         to: tenant.adminEmail ?? '',
         cc: '',
         subject: 'Your LMS Access Credentials',
-        message: `Hello ${tenant.name},\n\nYou can access your LMS at https://${tenant.slug}.example.com.\n\nUse the link below to set your password and log in.\n\nBest regards,\nPlatform Team`,
+        message: `Hello ${tenant.name},\n\nYou can access your LMS at ${url}.\n\nUse the link below to set your password and log in.\n\nBest regards,\nPlatform Team`,
         methodEmail: true,
       });
     }
@@ -128,6 +133,47 @@ export function SendCredentialsModal({ open, onOpenChange, tenant, canManage }: 
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Tenant Access URL Section */}
+            <div className="p-4 rounded-lg border bg-muted/50 space-y-3">
+              <Label className="text-sm font-semibold">Tenant Login URL</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={tenantUrl}
+                  className="font-mono text-sm"
+                  aria-label="Tenant access URL"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(tenantUrl);
+                    toast({ title: 'Link copied to clipboard!' });
+                  }}
+                  className="flex-shrink-0"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </Button>
+                {tenant?.status === 'active' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(tenantUrl, '_blank', 'noopener,noreferrer')}
+                    className="flex-shrink-0"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Share this URL with the tenant admin to access their portal
+              </p>
+            </div>
+
             <FormField
               control={form.control}
               name="to"

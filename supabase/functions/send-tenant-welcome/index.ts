@@ -11,7 +11,15 @@ interface WelcomeEmailRequest {
   adminEmail: string;
   adminName: string;
   tenantName: string;
+  tenantSlug?: string;
   temporaryPassword?: string;
+}
+
+// Get tenant base URL from environment or use default
+const TENANT_BASE_URL = Deno.env.get('TENANT_BASE_URL') || 'prism.ai';
+
+function getTenantUrl(slug: string): string {
+  return `https://${slug}.${TENANT_BASE_URL}`;
 }
 
 serve(async (req) => {
@@ -24,9 +32,23 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { tenantId, adminEmail, adminName, tenantName, temporaryPassword } = await req.json() as WelcomeEmailRequest;
+    const { tenantId, adminEmail, adminName, tenantName, tenantSlug, temporaryPassword } = await req.json() as WelcomeEmailRequest;
 
-    console.log('Sending welcome email:', { tenantId, adminEmail, tenantName });
+    console.log('Sending welcome email:', { tenantId, adminEmail, tenantName, tenantSlug });
+    
+    // Get tenant slug if not provided
+    let slug = tenantSlug;
+    if (!slug) {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('domain')
+        .eq('id', tenantId)
+        .single();
+      
+      slug = tenant?.domain || 'your-org';
+    }
+    
+    const tenantUrl = getTenantUrl(slug);
 
     // For now, we'll use Supabase's built-in email functionality
     // Create a magic link for the user to set their password
@@ -60,12 +82,14 @@ serve(async (req) => {
     // In production, you would integrate with Resend or another email service here
     // For now, we return the magic link for testing
     console.log('Magic link generated:', magicLinkData.properties.action_link);
+    console.log('Tenant access URL:', tenantUrl);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Welcome email sent successfully',
         magicLink: magicLinkData.properties.action_link,
+        tenantUrl: tenantUrl,
         // In production, don't return the magic link
       }),
       {

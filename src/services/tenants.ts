@@ -4,6 +4,16 @@ export type TenantStatus = 'active' | 'paused';
 export type TenantPlan = 'free' | 'pro' | 'enterprise';
 export type TenantCategory = 'Business School' | 'Engineering' | 'Arts' | 'Test Tenants' | 'Other';
 
+// Configurable base URL for tenant portals
+const TENANT_BASE_URL = import.meta.env.VITE_TENANT_BASE_URL || 'prism.ai';
+
+/**
+ * Generate full tenant access URL from slug
+ */
+export function getTenantUrl(slug: string): string {
+  return `https://${slug}.${TENANT_BASE_URL}`;
+}
+
 export interface NewTenantInput {
   name: string;
   slug: string; // subdomain
@@ -252,6 +262,7 @@ export async function createTenant(input: NewTenantInput): Promise<Tenant> {
         adminEmail: input.adminEmail,
         adminName: input.name + ' Admin',
         tenantName: input.name,
+        tenantSlug: input.slug,
         temporaryPassword,
       },
     });
@@ -516,7 +527,7 @@ export async function sendCredentials(
 
   // Generate a credential link token
   const token = Math.random().toString(36).slice(2);
-  const link = `https://${t.slug}.example.com/login?token=${token}`;
+  const link = `${getTenantUrl(t.slug)}/login?token=${token}`;
 
   tenants[idx] = { ...t, lastCredentialsSentAt: new Date().toISOString() };
   saveTenants(tenants);

@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Mail, Edit, Trash2, MoreHorizontal, Building2, CheckCircle, PauseCircle, Users } from 'lucide-react';
-import { fetchTenants, TenantsQueryKey, Tenant } from '@/services/tenants';
+import { Mail, Edit, Trash2, MoreHorizontal, Building2, CheckCircle, PauseCircle, Users, Copy, ExternalLink } from 'lucide-react';
+import { fetchTenants, TenantsQueryKey, Tenant, getTenantUrl } from '@/services/tenants';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { SendCredentialsModal } from '@/components/platform-owner/tenant/SendCredentialsModal';
 import { EditTenantDrawer } from '@/components/platform-owner/tenant/EditTenantDrawer';
@@ -28,11 +29,34 @@ export function TenantManagement() {
   const { user } = useAuth();
   const canManage = user?.role === 'platform_owner';
   const { data: tenants = [] } = useQuery({ queryKey: TenantsQueryKey, queryFn: fetchTenants });
+  const { toast } = useToast();
 
   const [selected, setSelected] = React.useState<Tenant | null>(null);
   const [openSend, setOpenSend] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
   const [openDelete, setOpenDelete] = React.useState(false);
+
+  const copyTenantLink = async (tenant: Tenant) => {
+    const url = getTenantUrl(tenant.slug);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied!",
+        description: `Tenant access link copied to clipboard`,
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openTenantPortal = (tenant: Tenant) => {
+    const url = getTenantUrl(tenant.slug);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const onAction = (t: Tenant, action: 'send' | 'edit' | 'delete') => {
     setSelected(t);
@@ -93,6 +117,7 @@ export function TenantManagement() {
               <TableRow>
                 <TableHead>Organization</TableHead>
                 <TableHead>Domain</TableHead>
+                <TableHead>Tenant Access Link</TableHead>
                 <TableHead>Admin Email</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Users</TableHead>
@@ -103,6 +128,9 @@ export function TenantManagement() {
             <TableBody>
               {tenants.map((t) => {
                 const sendDisabled = t.status !== 'active' || !canManage;
+                const tenantUrl = getTenantUrl(t.slug);
+                const isActive = t.status === 'active';
+                
                 return (
                   <TableRow key={t.id}>
                     <TableCell>
@@ -110,6 +138,41 @@ export function TenantManagement() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{t.slug}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => isActive ? openTenantPortal(t) : undefined}
+                              disabled={!isActive}
+                              className={`text-sm font-mono flex items-center gap-1 hover:underline ${
+                                isActive ? 'text-primary cursor-pointer' : 'text-muted-foreground cursor-not-allowed'
+                              }`}
+                            >
+                              <span className="truncate max-w-[200px]">{tenantUrl}</span>
+                              {isActive && <ExternalLink className="w-3 h-3 flex-shrink-0" />}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {isActive ? 'Open tenant portal in new tab' : 'Activate tenant to access portal'}
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyTenantLink(t)}
+                              className="h-8 w-8 p-0"
+                              aria-label={`Copy access link for ${t.name}`}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Copy tenant access link</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </TableCell>
                     <TableCell>{t.adminEmail}</TableCell>
                     <TableCell>
@@ -127,6 +190,31 @@ export function TenantManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              copyTenantLink(t);
+                            }}
+                          >
+                            <Copy className="w-4 h-4 mr-2" /> Copy Access Link
+                          </DropdownMenuItem>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  if (!isActive) return;
+                                  openTenantPortal(t);
+                                }}
+                                disabled={!isActive}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" /> Open Tenant Portal
+                              </DropdownMenuItem>
+                            </TooltipTrigger>
+                            {!isActive && <TooltipContent>Activate tenant to open portal</TooltipContent>}
+                          </Tooltip>
+
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <DropdownMenuItem
